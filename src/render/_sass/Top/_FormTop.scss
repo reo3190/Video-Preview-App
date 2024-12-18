@@ -1,0 +1,128 @@
+.form-top-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  font-size: 1.2rem;
+
+  .inputpath {
+    position: relative;
+    // width: 300px;
+    display: flex;
+    flex-direction: row;
+
+    gap: 5px;
+
+    input {
+      width: 300px;
+      height: 3rem;
+      font-style: italic;
+      background: var(--bg-sub-color);
+      border-radius: 5px;
+      position: relative;
+
+      // padding: 0 10px 0 10px ;
+
+      text-align: center;
+
+      border: none;
+      color: var(--tx-color);
+
+      &:focus {
+        outline: none;
+      }
+    }
+
+    .inputpath-icon {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+    }
+
+    .update {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      min-width: 50px;
+      padding: 5px;
+
+      border: none;
+      background: transparent;
+      color: var(--tx-color);
+      border-radius: 3px;
+
+      &:hover {
+        background: var(--bg-sub-color);
+      }
+    }
+  }
+
+  .fil-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    margin-top: 20px;
+    gap: 20px;
+
+    div {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 3px;
+
+      select {
+        background: var(--bg-sub-color);
+        border: none;
+        color: var(--tx-color);
+        width: 120px;
+        height: 2rem;
+        padding-left: 5px;
+
+        &:focus {
+          outline: none;
+        }
+      }
+    }
+  }
+
+  .fil-search-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    margin-top: 10px;
+
+    .fil-search {
+      position: relative;
+      width: 200px;
+
+      input {
+        width: 100%;
+        height: 3rem;
+        font-style: italic;
+        background: var(--bg-sub-color);
+        border-radius: 5px;
+        position: relative;
+
+        // padding: 0 10px 0 10px ;
+
+        text-align: center;
+
+        border: none;
+        color: var(--tx-color);
+
+        &:focus {
+          outline: none;
+        }
+      }
+
+      .fil-search-icon {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+      }
+    }
+  }
+}

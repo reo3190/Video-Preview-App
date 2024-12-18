@@ -1,6 +1,6 @@
 /** エディタで補完を効かせるために型定義をインポート */
 import type { Configuration } from "webpack";
-
+import CopyPlugin from "copy-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 
@@ -67,6 +67,16 @@ const common: Configuration = {
       },
     ],
   },
+  // plugins: [
+  //   new CopyPlugin({
+  //     patterns: [
+  //       {
+  //         from: "src/resorce", // ffmpegのバイナリのパス
+  //         to: "ffmpeg", // 出力先のディレクトリ（`resources/ffmpeg`）
+  //       },
+  //     ],
+  //   }),
+  // ],
   // 開発時には watch モードでファイルの変化を監視する
   watch: isDev,
   /**
@@ -86,7 +96,7 @@ const main: Configuration = {
   target: "electron-main",
   // エントリーファイル（チャンク名の "main.js" として出力される）
   entry: {
-    main: "./src/main.ts",
+    main: "./src/main/main.ts",
   },
 };
 
@@ -95,7 +105,7 @@ const preload: Configuration = {
   ...common,
   target: "electron-preload",
   entry: {
-    preload: "./src/preload.ts",
+    preload: "./src/main/preload.ts",
   },
 };
 
@@ -118,6 +128,14 @@ const renderer: Configuration = {
     new HtmlWebpackPlugin({
       // テンプレート
       template: "./src/render/index.html",
+    }),
+    new CopyPlugin({
+      patterns: [
+        {
+          from: "resources/ffmpeg", // ffmpegのバイナリのパス
+          to: "resources/ffmpeg", // 出力先のディレクトリ（`resources/ffmpeg`）
+        },
+      ],
     }),
   ],
 };

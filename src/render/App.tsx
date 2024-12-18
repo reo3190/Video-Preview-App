@@ -1,9 +1,13 @@
-import "./sass/main.scss";
+import "./_sass/main.scss";
+import { DataProvider } from "../hook/UpdateContext";
+import Top from "./page/Top";
 
 export const App = () => {
   return (
-    <div className="container">
-      <h1>Hello!!!!</h1>
-    </div>
+    <>
+      <DataProvider>
+        <Top />
+      </DataProvider>
+    </>
   );
 };
