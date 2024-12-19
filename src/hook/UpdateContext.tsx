@@ -8,6 +8,8 @@ import {
 import { Filter } from "./api";
 // ---------------------------------------------------------
 
+export type VideoCacheMode = "add" | "get" | "remove" | "clear";
+
 interface DataContext {
   inputPath: string;
   setInputPath: (e: string) => void;
@@ -21,10 +23,19 @@ interface DataContext {
   setCurPage: (e: number) => void;
   lastLoad: number;
   setLastLoad: (e: number) => void;
+  videoCache: Map<string, Blob>;
+  editVideoCache: (
+    mode: VideoCacheMode,
+    key: string,
+    value?: Blob
+  ) => Blob | null;
+  // getFromVideoCache: (key: string) => Blob | undefined;
+  // removeFromVideoCache: (key: string) => void;
+  // clearVideoCache: () => void;
 }
 
 const defaultContext: DataContext = {
-  inputPath: "U:\\01_check\\02_3dLO_ch",
+  inputPath: "L:\\02_check\\02_cut\\mk_F",
   setInputPath: () => {},
   filter: {
     date: "all",
@@ -39,10 +50,12 @@ const defaultContext: DataContext = {
   setVideoList: () => {},
   filteredVideoList: [],
   setFilteredVideoList: () => {},
-  curPage: 1,
+  curPage: 0,
   setCurPage: () => {},
   lastLoad: 0,
   setLastLoad: () => {},
+  videoCache: new Map<string, Blob>(),
+  editVideoCache: () => null,
 };
 
 const datactx = createContext<DataContext>(defaultContext);
@@ -58,6 +71,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   );
   const [curPage, setCurPage] = useState<number>(defaultContext.curPage);
   const [lastLoad, setLastLoad] = useState<number>(defaultContext.lastLoad);
+  const videoCache = useState<Map<string, Blob>>(new Map())[0];
 
   const updateInputPath = useCallback((path: string): void => {
     setInputPath(path);
@@ -86,6 +100,26 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setLastLoad(e);
   }, []);
 
+  const editVideoCache = useCallback(
+    (mode: VideoCacheMode, key: string, value?: Blob): Blob | null => {
+      switch (mode) {
+        case "add":
+          if (!value) return null;
+          videoCache.set(key, value);
+          return null;
+        case "get":
+          return videoCache.get(key) || null;
+        case "remove":
+          videoCache.delete(key);
+          return null;
+        case "clear":
+          videoCache.clear();
+          return null;
+      }
+    },
+    [videoCache]
+  );
+
   return (
     <datactx.Provider
       value={{
@@ -101,6 +135,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setCurPage: updateCurPage,
         lastLoad,
         setLastLoad: updateLastLoad,
+        videoCache,
+        editVideoCache,
       }}
     >
       {children}

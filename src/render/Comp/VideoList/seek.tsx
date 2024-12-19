@@ -1,11 +1,11 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, forwardRef, useEffect } from "react";
 
 interface Props {
   path: string;
+  src: string;
 }
 
-const VideoSeeker: React.FC<Props> = React.memo(({ path }) => {
-  console.log("load:" + path);
+const VideoSeeker: React.FC<Props> = React.memo(({ path, src }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null); // video要素の参照
   const [isSeeking, setIsSeeking] = useState<boolean>(false); // シーク中フラグ
   const [lastMouseX, setLastMouseX] = useState<number | null>(null); // 前回のマウス位置
@@ -13,7 +13,7 @@ const VideoSeeker: React.FC<Props> = React.memo(({ path }) => {
   const MOVE_THRESHOLD = 10; // 一定距離 (ピクセル)
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isSeeking || !videoRef.current) return;
+    if (!isSeeking || !videoRef || !videoRef.current) return;
 
     const videoElement = videoRef.current;
     const rect = videoElement.getBoundingClientRect();
@@ -66,7 +66,8 @@ const VideoSeeker: React.FC<Props> = React.memo(({ path }) => {
         ref={videoRef}
         width="100%"
         height="100%"
-        src={`file:\\${path}`}
+        // src={`file:\\${path}`}
+        src={src}
         preload="auto"
         // controls
       />
