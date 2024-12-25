@@ -2,6 +2,8 @@ export interface IElectronAPI {
   getVideoList: (e: string) => Promise<Video[] | Err>;
   getThumbnail: (e: string) => Promise<string | Err>;
   _getThumbnail: (e: string) => Promise<[string[], number] | Err>;
+  convert2HLS: (e: string[]) => Promise<Record<string, string | null> | Err>;
+  _convert2HLS: (e: string[]) => Promise<string[]>;
 }
 
 type Weaken<T, K extends keyof T> = {

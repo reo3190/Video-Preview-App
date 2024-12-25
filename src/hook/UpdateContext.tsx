@@ -29,9 +29,12 @@ interface DataContext {
     key: string,
     value?: Blob
   ) => Blob | null;
-  // getFromVideoCache: (key: string) => Blob | undefined;
-  // removeFromVideoCache: (key: string) => void;
-  // clearVideoCache: () => void;
+  imgCache: Map<string, string>;
+  editImgCache: (
+    mode: VideoCacheMode,
+    key: string,
+    value?: string
+  ) => string | null;
 }
 
 const defaultContext: DataContext = {
@@ -56,6 +59,8 @@ const defaultContext: DataContext = {
   setLastLoad: () => {},
   videoCache: new Map<string, Blob>(),
   editVideoCache: () => null,
+  imgCache: new Map<string, string>(),
+  editImgCache: () => null,
 };
 
 const datactx = createContext<DataContext>(defaultContext);
@@ -72,6 +77,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [curPage, setCurPage] = useState<number>(defaultContext.curPage);
   const [lastLoad, setLastLoad] = useState<number>(defaultContext.lastLoad);
   const videoCache = useState<Map<string, Blob>>(new Map())[0];
+  const imgCache = useState<Map<string, string>>(new Map())[0];
 
   const updateInputPath = useCallback((path: string): void => {
     setInputPath(path);
@@ -120,6 +126,26 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     [videoCache]
   );
 
+  const editImgCache = useCallback(
+    (mode: VideoCacheMode, key: string, value?: string): string | null => {
+      switch (mode) {
+        case "add":
+          if (!value) return null;
+          imgCache.set(key, value);
+          return null;
+        case "get":
+          return imgCache.get(key) || null;
+        case "remove":
+          imgCache.delete(key);
+          return null;
+        case "clear":
+          imgCache.clear();
+          return null;
+      }
+    },
+    [videoCache]
+  );
+
   return (
     <datactx.Provider
       value={{
@@ -137,6 +163,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setLastLoad: updateLastLoad,
         videoCache,
         editVideoCache,
+        imgCache,
+        editImgCache,
       }}
     >
       {children}

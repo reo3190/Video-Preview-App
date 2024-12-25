@@ -40,6 +40,18 @@ const electronHandler = {
     );
     return response;
   },
+
+  convert2HLS: async (
+    filePath: string[]
+  ): Promise<Record<string, string | null> | Err> => {
+    const response = await ipcRenderer.invoke("convert-to-hls", filePath);
+    return response;
+  },
+
+  _convert2HLS: async (filePath: string[]): Promise<string[]> => {
+    const response = await ipcRenderer.invoke("_convert-to-hls", filePath);
+    return response;
+  },
 };
 
 contextBridge.exposeInMainWorld("electron", electronHandler);

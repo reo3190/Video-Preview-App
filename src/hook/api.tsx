@@ -1,5 +1,5 @@
 export const isErr = (state: unknown): state is Err => {
-  return "error" in (state as any);
+  return typeof state === "object" && state !== null && "error" in state;
 };
 
 export const makeDateList = (videos: Video[]) => {

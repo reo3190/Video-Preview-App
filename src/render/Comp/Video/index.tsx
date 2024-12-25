@@ -40,9 +40,10 @@ const Video = forwardRef<any, VideoUIProps>(
       inactivityTimeout: 0,
       sources: [
         {
-          src: `file://${path}`,
-          // type: "application/x-mpegURL",
-          type: "video/mp4",
+          // src: `file://${path}`,
+          src: path,
+          type: "application/x-mpegURL",
+          // type: "video/mp4",
         },
       ],
       width: size ?? 100,

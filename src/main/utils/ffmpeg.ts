@@ -110,7 +110,7 @@ const generateThumbnail = async (
       "-vcodec",
       "png",
       "-vf",
-      "scale=300:-1", // リサイズオプション（適宜調整）
+      "scale=250:-1", // リサイズオプション（適宜調整）
       "-",
     ]);
 
@@ -138,4 +138,58 @@ const generateThumbnail = async (
   });
 };
 
-export { getVideoDuration, generateThumbnails, generateThumbnail };
+const Convert2HLS_All = (
+  filePaths: string[],
+  outputFiles: string[]
+): Promise<Record<string, string | null> | Err> => {
+  return new Promise((resolve, reject) => {
+    const promises: Promise<{
+      in: string;
+      out: string | null;
+    }>[] = [];
+    filePaths.forEach((e, i) => {
+      promises.push(Convert2HLS(e, outputFiles[i]));
+    });
+
+    Promise.all(promises)
+      .then((results) => {
+        const _res: Record<string, string | null> = {};
+        results.forEach((e) => {
+          _res[e.in] = e.out;
+        });
+        resolve(_res);
+      })
+      .catch((error) => {
+        const err: Err = { error: error, errorcode: "" };
+        reject(err);
+      });
+  });
+};
+
+const Convert2HLS = (
+  filePath: string,
+  outputFile: string
+): Promise<{
+  in: string;
+  out: string | null;
+}> => {
+  return new Promise((resolve, reject) => {
+    const command = `${ffmpegPath} -i "${filePath}" -vf scale=250:-2 -c:v libx264 -start_number 0 -hls_time 1 -hls_list_size 0 -f hls "${outputFile}"`;
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        console.error("FFmpeg Error:", stderr);
+        const err: Err = { error: "", errorcode: "" };
+        return reject({ in: filePath, out: null });
+      }
+      const succ: Succ = { success: "" };
+      resolve({ in: filePath, out: outputFile });
+    });
+  });
+};
+
+export {
+  getVideoDuration,
+  generateThumbnails,
+  generateThumbnail,
+  Convert2HLS_All,
+};

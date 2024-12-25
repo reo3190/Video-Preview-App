@@ -1,8 +1,9 @@
 import React, { useRef, useState, forwardRef, useEffect } from "react";
+import Video from "../Video";
 
 interface Props {
   path: string;
-  src: string;
+  src: string | null;
 }
 
 const VideoSeeker: React.FC<Props> = React.memo(({ path, src }) => {
@@ -11,6 +12,8 @@ const VideoSeeker: React.FC<Props> = React.memo(({ path, src }) => {
   const [lastMouseX, setLastMouseX] = useState<number | null>(null); // 前回のマウス位置
 
   const MOVE_THRESHOLD = 10; // 一定距離 (ピクセル)
+
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isSeeking || !videoRef || !videoRef.current) return;
@@ -39,6 +42,10 @@ const VideoSeeker: React.FC<Props> = React.memo(({ path, src }) => {
     }
   };
 
+  const handleImageLoad = () => {
+    setIsLoaded(true);
+  };
+
   const handleMouseLeave = () => {
     setIsSeeking(false);
     setLastMouseX(null); // シーク終了時にリセット
@@ -55,23 +62,31 @@ const VideoSeeker: React.FC<Props> = React.memo(({ path, src }) => {
 
   return (
     <div
-      style={{ width: "250px", height: "auto", position: "relative" }}
+      style={{ width: "100%", height: "100%", position: "relative" }}
       onMouseMove={handleMouseMove}
       // onMouseDown={handleMouseDown}
       // onMouseUp={handleMouseUp}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <video
-        ref={videoRef}
-        width="100%"
-        height="100%"
-        // src={`file:\\${path}`}
-        src={src}
-        preload="auto"
-        // controls
-      />
-      <div
+      {/* {!isLoaded && <div className="placeholder">Loading...</div>} */}
+      {src && (
+        <>
+          {/* <video
+            ref={videoRef}
+            width="250px"
+            // height="auto"
+            // src={`file:\\${path}`}
+            src={src}
+            preload="auto"
+            onCanPlay={handleImageLoad}
+            // controls
+          /> */}
+          <Video path={src} size={250} />
+        </>
+      )}
+
+      {/* <div
         style={{
           position: "absolute",
           top: 0,
@@ -81,7 +96,7 @@ const VideoSeeker: React.FC<Props> = React.memo(({ path, src }) => {
           cursor: "pointer",
           backgroundColor: "transparent",
         }}
-      ></div>
+      ></div> */}
     </div>
   );
 });

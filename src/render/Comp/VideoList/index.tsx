@@ -16,20 +16,51 @@ const VideoList = () => {
     startIndex,
     startIndex + itemsPerPage
   );
+  // const [currentPaths, setCurrentPaths] = useState<
+  //   Record<string, string | null>
+  // >({});
+  const [currentPaths, setCurrentPaths] = useState<string[]>([]);
 
   const handlePageChange = (direction: number) => {
+    let _curPage = curPage;
     if (direction === -1 && curPage > 0) {
       setCurPage(curPage - 1);
+      _curPage -= 1;
     } else if (
       direction === -2 &&
       (curPage + 1) * itemsPerPage < filteredVideoList.length
     ) {
       setCurPage(curPage + 1);
+      _curPage += 1;
     } else {
       setCurPage(direction);
+      _curPage = direction;
     }
     // setCurIndex(0);
+
+    const _startIndex = _curPage * itemsPerPage;
+    const _currentItems = filteredVideoList.slice(
+      _startIndex,
+      _startIndex + itemsPerPage
+    );
+
+    convert(_currentItems);
   };
+
+  const convert = async (_currentItems: Video[]) => {
+    const filePaths: string[] = [];
+    filteredVideoList.forEach((e) => {
+      filePaths.push(e.path);
+    });
+
+    // const res = await window.electron.convert2HLS(filePaths);
+    // if (isErr(res)) return;
+    // setCurrentPaths(res);
+
+    // console.log(res);
+  };
+
+  useEffect(() => {}, [currentPaths]);
 
   return (
     <>
@@ -41,35 +72,11 @@ const VideoList = () => {
       />
       <div className="video-list-wrapper">
         {currentItems.map((e) => {
-          return (
-            <CahcheVideo
-              key={e.path}
-              filePath={e.path}
-              videoCache={videoCache}
-            />
-            // <div
-            //   key={e.path}
-            //   style={{
-            //     width: "250px",
-            //     height: "auto",
-            //     position: "relative",
-            //     display: `${view ? "auto" : "none"}`,
-            //   }}
-            // >
-            //   <video
-            //     ref={(el) => {
-            //       if (el) videoRefs.current[e.path] = el;
-            //     }}
-            //     width="100%"
-            //     height="100%"
-            //     src={`file:\\${e.path}`}
-            //     preload="auto"
-            //     // controls
-            //   />
-            // </div>
-          );
-          // return <VideoSeeker key={e.path} path={e.path} />;
+          return <CahcheVideo key={e.path} filePath={e.path} />;
         })}
+        {/* {currentPaths.map((e) => {
+          return <CahcheVideo key={e} filePath={e || ""} />;
+        })} */}
       </div>
     </>
   );
