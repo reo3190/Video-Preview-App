@@ -1,27 +1,31 @@
 import React, { useRef, useEffect, useState, FC } from "react";
 import { useDataContext } from "../../../hook/UpdateContext";
+import { useNavigate } from "react-router-dom";
 import VideoSeeker from "./seek";
 import { IoReturnDownForwardSharp } from "react-icons/io5";
 import { isErr } from "../../../hook/api";
 
 interface Props {
-  filePath: string;
+  video: Video;
+  // filePath: string;
 }
 
-const CahcheVideo: FC<Props> = ({ filePath }) => {
+const CahcheVideo: FC<Props> = ({ video }) => {
   const [videoURL, setVideoURL] = useState<string | null>(null);
-  const { editVideoCache, editImgCache } = useDataContext();
+  const { setCurVideo, editVideoCache, editImgCache } = useDataContext();
 
-  const [img, setImg] = useState<string | null>(editImgCache("get", filePath));
+  const [img, setImg] = useState<string | null>(
+    editImgCache("get", video.path)
+  );
   const [Loading, setLoading] = useState<boolean>(!img);
 
   useEffect(() => {
     const getImg = async () => {
       if (Loading) {
-        const res = await window.electron.getThumbnail(filePath);
+        const res = await window.electron.getThumbnail(video.path);
         if (isErr(res)) return;
 
-        editImgCache("add", filePath, res);
+        editImgCache("add", video.path, res);
         setImg(res);
       }
     };
@@ -31,6 +35,12 @@ const CahcheVideo: FC<Props> = ({ filePath }) => {
 
   const handleImageLoad = () => {
     setLoading(false);
+  };
+
+  const navigate = useNavigate();
+  const handlePlay = (video: Video) => {
+    navigate("/play");
+    setCurVideo(video);
   };
 
   // useEffect(() => {
@@ -80,6 +90,7 @@ const CahcheVideo: FC<Props> = ({ filePath }) => {
           className={`frame-image ${Loading ? "loading" : "loaded"}`}
           src={"data:image/png;base64," + img}
           onLoad={handleImageLoad}
+          onClick={() => handlePlay(video)}
         />
         {/* <VideoSeeker path={filePath} src={filePath} /> */}
       </div>

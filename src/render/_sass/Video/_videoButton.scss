@@ -1,0 +1,22 @@
+.button-wrapper {
+  display: flex;
+  position: relative;
+  justify-content: center;
+  background: var(--video-UI-bg);
+  width: 100%;
+
+  button {
+    border: none;
+    color: var(--video-UI-tx);
+    background: transparent;
+    border-radius: 1px;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+
+    &:hover {
+      background: var(--video-UI-hover-bg);
+      color: var(--video-UI-hover-tx);
+    }
+  }
+}

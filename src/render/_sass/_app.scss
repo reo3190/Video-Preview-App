@@ -7,3 +7,7 @@ body {
   background: #333;
   color: #eee;
 }
+
+*:focus {
+  outline: none;
+}

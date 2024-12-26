@@ -21,6 +21,8 @@ interface DataContext {
   setFilteredVideoList: (e: Video[]) => void;
   curPage: number;
   setCurPage: (e: number) => void;
+  curVideo: Video | null;
+  setCurVideo: (e: Video) => void;
   lastLoad: number;
   setLastLoad: (e: number) => void;
   videoCache: Map<string, Blob>;
@@ -55,6 +57,8 @@ const defaultContext: DataContext = {
   setFilteredVideoList: () => {},
   curPage: 0,
   setCurPage: () => {},
+  curVideo: null,
+  setCurVideo: () => {},
   lastLoad: 0,
   setLastLoad: () => {},
   videoCache: new Map<string, Blob>(),
@@ -75,6 +79,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     defaultContext.filteredVideoList
   );
   const [curPage, setCurPage] = useState<number>(defaultContext.curPage);
+  const [curVideo, setCurVideo] = useState<Video | null>(
+    defaultContext.curVideo
+  );
   const [lastLoad, setLastLoad] = useState<number>(defaultContext.lastLoad);
   const videoCache = useState<Map<string, Blob>>(new Map())[0];
   const imgCache = useState<Map<string, string>>(new Map())[0];
@@ -100,6 +107,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateCurPage = useCallback((e: number): void => {
     setCurPage(e);
+  }, []);
+
+  const updateCurVideo = useCallback((e: Video): void => {
+    setCurVideo(e);
   }, []);
 
   const updateLastLoad = useCallback((e: number): void => {
@@ -159,6 +170,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setFilteredVideoList: updateFilteredVideoList,
         curPage,
         setCurPage: updateCurPage,
+        curVideo,
+        setCurVideo: updateCurVideo,
         lastLoad,
         setLastLoad: updateLastLoad,
         videoCache,

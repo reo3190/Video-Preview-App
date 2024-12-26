@@ -72,7 +72,7 @@ const VideoList = () => {
       />
       <div className="video-list-wrapper">
         {currentItems.map((e) => {
-          return <CahcheVideo key={e.path} filePath={e.path} />;
+          return <CahcheVideo key={e.path} video={e} />;
         })}
         {/* {currentPaths.map((e) => {
           return <CahcheVideo key={e} filePath={e || ""} />;
