@@ -21,6 +21,13 @@ const electronHandler = {
     },
   },
 
+  getWindowSize: async () => {
+    return await ipcRenderer.invoke("get-window-size");
+  },
+  onWindowResize: (callback: (size: Electron.Rectangle) => void) => {
+    ipcRenderer.on("window-resize", (_, size) => callback(size));
+  },
+
   getVideoList: async (inputPath: string): Promise<Video[] | Err> => {
     const response = await ipcRenderer.invoke("get-video-list", inputPath);
     return response;

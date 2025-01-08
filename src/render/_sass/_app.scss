@@ -11,3 +11,38 @@ body {
 *:focus {
   outline: none;
 }
+
+.mouseSVG {
+  pointer-events: none;
+  z-index: 20;
+}
+
+.player-wrapper {
+  position: relative;
+  width: fit-content;
+  display: flex;
+
+  .canvas-wrapper {
+    position: absolute;
+    width: fit-content;
+
+    .canvas-frame {
+      position: relative;
+      z-index: 10;
+      background: aqua;
+      opacity: 0.5;
+
+      width: fit-content;
+      height: fit-content;
+      .canvas-container {
+        .canvas {
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  .video-container {
+    width: 100%;
+  }
+}

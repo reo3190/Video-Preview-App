@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import videojs from "video.js";
 import Player from "video.js/dist/types/player";
+import { num2date } from "../../../hook/api";
 
 const fps = 24;
 
@@ -105,6 +106,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       }
     };
 
+    const setWidth = (w: number) => {
+      if (playerRef.current) {
+        playerRef.current.width(w);
+      }
+    };
+
     // 親コンポーネントに公開するメソッド
     useImperativeHandle(ref, () => ({
       play: () => playerRef.current?.play(),
@@ -119,6 +126,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       },
       getCurrentTime: () => playerRef.current?.currentTime() || 0,
       setCurrentTime: (time: number) => playerRef.current?.currentTime(time),
+      setWidth: (w: number) => setWidth(w),
     }));
 
     return (

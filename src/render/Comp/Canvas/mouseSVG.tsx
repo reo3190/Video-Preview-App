@@ -1,5 +1,4 @@
 import React, { useState, useEffect, FC } from "react";
-
 interface Props {
   canvas: HTMLCanvasElement | null;
   size: number;
@@ -61,6 +60,7 @@ const MouseSVG: FC<Props> = ({ canvas, size, brightness, move }) => {
   }
 
   return (
+    // <a.div>
     <svg
       width={canvas ? canvas.width : 0}
       height={canvas ? canvas.height : 0}
@@ -75,9 +75,17 @@ const MouseSVG: FC<Props> = ({ canvas, size, brightness, move }) => {
       <circle
         cx={mousePosition.x}
         cy={mousePosition.y}
+        r={`${size / 2 + 2 || 0}`}
+        fill="none"
+        stroke={`white`}
+      />
+
+      <circle
+        cx={mousePosition.x}
+        cy={mousePosition.y}
         r={`${size / 2 || 0}`}
         fill="none"
-        stroke={`${move ? (brightness ? "white" : "black") : "white"}`}
+        stroke={`black`}
       />
       {!move && (
         <circle
@@ -89,6 +97,7 @@ const MouseSVG: FC<Props> = ({ canvas, size, brightness, move }) => {
         />
       )}
     </svg>
+    // </a.div>
   );
 };
 

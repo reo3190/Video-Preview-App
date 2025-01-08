@@ -32,6 +32,11 @@ app.whenReady().then(() => {
 
   mainWindow.webContents.openDevTools({ mode: "detach" });
 
+  mainWindow.on("resize", () => {
+    const size = mainWindow.getBounds();
+    mainWindow.webContents.send("window-resize", size);
+  });
+
   // レンダラープロセスをロード
   mainWindow.loadFile("dist/index.html");
 });

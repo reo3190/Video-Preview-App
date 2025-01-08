@@ -11,6 +11,8 @@ import { Filter } from "./api";
 export type VideoCacheMode = "add" | "get" | "remove" | "clear";
 
 interface DataContext {
+  windowSize: Electron.Rectangle;
+  setWindowSize: (e: Electron.Rectangle) => void;
   inputPath: string;
   setInputPath: (e: string) => void;
   filter: Filter;
@@ -37,9 +39,17 @@ interface DataContext {
     key: string,
     value?: string
   ) => string | null;
+  paintTool: PaintTool;
+  setPaintTool: (tool: PaintToolName, update: Partial<PaintToolConfig>) => void;
+  activePaintTool: PaintToolName;
+  setActivePaintTool: (e: PaintToolName) => void;
+  paintConfig: PaintConfig;
+  setPaintConfig: (update: Partial<PaintConfig>) => void;
 }
 
 const defaultContext: DataContext = {
+  windowSize: { x: 0, y: 0, width: 0, height: 0 },
+  setWindowSize: () => {},
   inputPath: "L:\\02_check\\02_cut\\mk_F",
   setInputPath: () => {},
   filter: {
@@ -65,6 +75,17 @@ const defaultContext: DataContext = {
   editVideoCache: () => null,
   imgCache: new Map<string, string>(),
   editImgCache: () => null,
+  paintTool: {
+    pen: { size: 10, color: "#000000", opacity: 1 },
+    eraser: { size: 10, color: "", opacity: 1 },
+    text: { size: 10, color: "#000000", opacity: 1 },
+    clear: { size: 0, color: "", opacity: 0 },
+  },
+  setPaintTool: () => {},
+  activePaintTool: "pen",
+  setActivePaintTool: () => {},
+  paintConfig: { smooth: 0, pressure: 0 },
+  setPaintConfig: () => {},
 };
 
 const datactx = createContext<DataContext>(defaultContext);
@@ -72,6 +93,9 @@ const datactx = createContext<DataContext>(defaultContext);
 export const useDataContext = () => useContext(datactx);
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
+  const [windowSize, setWindowSize] = useState<Electron.Rectangle>(
+    defaultContext.windowSize
+  );
   const [inputPath, setInputPath] = useState<string>(defaultContext.inputPath);
   const [filter, setFilter] = useState<Filter>(defaultContext.filter);
   const [videoList, setVideoList] = useState<Video[]>(defaultContext.videoList);
@@ -85,6 +109,19 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [lastLoad, setLastLoad] = useState<number>(defaultContext.lastLoad);
   const videoCache = useState<Map<string, Blob>>(new Map())[0];
   const imgCache = useState<Map<string, string>>(new Map())[0];
+  const [paintTool, setPaintTool] = useState<PaintTool>(
+    defaultContext.paintTool
+  );
+  const [activePaintTool, setActivePaintTool] = useState<PaintToolName>(
+    defaultContext.activePaintTool
+  );
+  const [paintConfig, setPaintConfig] = useState<PaintConfig>(
+    defaultContext.paintConfig
+  );
+
+  const updateWindowSize = useCallback((size: Electron.Rectangle): void => {
+    setWindowSize(size);
+  }, []);
 
   const updateInputPath = useCallback((path: string): void => {
     setInputPath(path);
@@ -157,9 +194,35 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     [videoCache]
   );
 
+  const updatePaintTool = useCallback(
+    (tool: PaintToolName, update: Partial<PaintToolConfig>): void => {
+      setPaintTool((prev) => ({
+        ...prev,
+        [tool]: { ...prev[tool], ...update },
+      }));
+    },
+    []
+  );
+
+  const updateActivePaintTool = useCallback((e: PaintToolName): void => {
+    setActivePaintTool(e);
+  }, []);
+
+  const updatePaintConfig = useCallback(
+    (update: Partial<PaintConfig>): void => {
+      setPaintConfig((prev) => ({
+        ...prev,
+        ...update,
+      }));
+    },
+    []
+  );
+
   return (
     <datactx.Provider
       value={{
+        windowSize,
+        setWindowSize: updateWindowSize,
         inputPath,
         setInputPath: updateInputPath,
         filter,
@@ -178,6 +241,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         editVideoCache,
         imgCache,
         editImgCache,
+        paintTool,
+        setPaintTool: updatePaintTool,
+        activePaintTool,
+        setActivePaintTool: updateActivePaintTool,
+        paintConfig,
+        setPaintConfig: updatePaintConfig,
       }}
     >
       {children}

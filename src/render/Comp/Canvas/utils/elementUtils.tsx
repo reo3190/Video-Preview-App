@@ -6,12 +6,12 @@ const createElement = (
   y1: number,
   x2: number,
   y2: number,
+  tool: PaintToolName,
   toolState: PaintToolConfig,
   paintConfig: PaintConfig,
   pressure: React.RefObject<number>
 ): PaintElement => {
-  const type = toolState.tool;
-  switch (type) {
+  switch (tool) {
     case "pen":
       const options1: StrokeOptions = {
         size: toolState.size,
@@ -23,7 +23,7 @@ const createElement = (
       };
       return {
         id,
-        type,
+        tool,
         points: [{ x: x1, y: y1, pressure: pressure.current }],
         size: toolState.size,
         color: toolState.color,
@@ -33,7 +33,7 @@ const createElement = (
     case "text":
       return {
         id,
-        type,
+        tool,
         x1,
         y1,
         x2,
@@ -55,7 +55,7 @@ const createElement = (
       };
       return {
         id,
-        type,
+        tool,
         points: [{ x: x1, y: y1, pressure: pressure.current }],
         size: toolState.size,
         opacity: toolState.opacity,
@@ -64,7 +64,7 @@ const createElement = (
     case "clear":
       return {
         id,
-        type,
+        tool,
       };
   }
 };
@@ -81,6 +81,7 @@ const updateElement = (
     action: ((e: PaintElement[]) => PaintElement[]) | PaintElement[],
     overwrite?: boolean
   ) => void,
+  tool: PaintToolName,
   toolState: PaintToolConfig,
   paintConfig: PaintConfig,
   pressure: React.RefObject<number>,
@@ -88,7 +89,7 @@ const updateElement = (
 ): void => {
   const elementsCopy: PaintElement[] = [...elements];
 
-  switch (toolState.tool) {
+  switch (tool) {
     case "eraser":
     case "pen":
       if (!elementsCopy[id].points) return;
@@ -122,6 +123,7 @@ const updateElement = (
           y1,
           x1 + textWidth,
           y1 + fixedSize.height,
+          tool,
           toolState,
           paintConfig,
           pressure
@@ -136,7 +138,7 @@ const updateElement = (
     case "clear":
       break;
     default:
-      throw new Error(`Type not recognised: ${toolState.tool}`);
+      throw new Error(`Type not recognised: ${tool}`);
   }
 
   setElements(elementsCopy, true);
@@ -148,7 +150,7 @@ const drawElement = (
   width: number = 0,
   height: number = 0
 ): void => {
-  switch (element.type) {
+  switch (element.tool) {
     case "pen":
       context.fillStyle = hexToRgba(element.color, element.opacity);
       const penStroke = getSvgPathFromStroke(
@@ -180,7 +182,7 @@ const drawElement = (
       context.clearRect(-zoomOffsetX, -zoomOffsetY, width * 5, height * 5);
       break;
     default:
-      throw new Error(`Type not recognised: ${element.type}`);
+      throw new Error(`Type not recognised: ${element.tool}`);
   }
 };
 

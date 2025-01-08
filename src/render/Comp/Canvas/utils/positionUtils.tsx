@@ -1,6 +1,6 @@
 const positionWithinElement = (x: number, y: number, element: PaintElement) => {
-  const { type, size = 1, x1 = 0, x2 = 0, y1 = 0, y2 = 0 } = element;
-  switch (type) {
+  const { tool, size = 1, x1 = 0, x2 = 0, y1 = 0, y2 = 0 } = element;
+  switch (tool) {
     case "pen":
     case "eraser":
     case "clear":
@@ -10,7 +10,7 @@ const positionWithinElement = (x: number, y: number, element: PaintElement) => {
         ? "inside"
         : null;
     default:
-      throw new Error(`Type not recognised: ${type}`);
+      throw new Error(`Type not recognised: ${tool}`);
   }
 };
 

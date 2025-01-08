@@ -1,5 +1,6 @@
 import { StrokeOptions } from "perfect-freehand";
 export interface IElectronAPI {
+  onWindowResize: (callback: (size: Electron.Rectangle) => void) => void;
   getVideoList: (e: string) => Promise<Video[] | Err>;
   getThumbnail: (e: string) => Promise<string | Err>;
   _getThumbnail: (e: string) => Promise<[string[], number] | Err>;
@@ -33,14 +34,15 @@ declare global {
     wordList: string[];
   }
 
-  type PaintTool = "pen" | "eraser" | "text" | "clear";
+  type PaintToolName = "pen" | "eraser" | "text" | "clear";
 
   interface PaintToolConfig {
-    tool: PaintTool;
     size: number;
     color: string;
     opacity: number;
   }
+
+  type PaintTool = Record<PaintToolName, PaintToolConfig>;
 
   interface PaintConfig {
     smooth: number;
@@ -55,7 +57,7 @@ declare global {
 
   interface PaintElement {
     id: number;
-    type: PaintTool;
+    tool: PaintToolName;
     points?: PaintPoint[];
     size?: number;
     color?: string;
