@@ -29,12 +29,18 @@ app.whenReady().then(() => {
       preload: path.join(__dirname, "preload.js"),
     },
   });
+  mainWindow.setAspectRatio(1.5);
 
   mainWindow.webContents.openDevTools({ mode: "detach" });
 
   mainWindow.on("resize", () => {
     const size = mainWindow.getBounds();
     mainWindow.webContents.send("window-resize", size);
+  });
+
+  ipcMain.handle("get-window-size", async (_): Promise<Electron.Rectangle> => {
+    const res = mainWindow.getBounds();
+    return res;
   });
 
   // レンダラープロセスをロード
@@ -181,3 +187,8 @@ ipcMain.handle(
     return output;
   }
 );
+
+// ipcMain.handle("select-video", async (_, path: string): Promise => {
+//   const fileData = fs.readFileSync(path); // バイナリデータとして読み込む
+//   return fileData.toString("base64"); // Base64に変換して返す
+// });

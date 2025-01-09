@@ -1,5 +1,6 @@
 import { StrokeOptions } from "perfect-freehand";
 export interface IElectronAPI {
+  getWindowSize: () => Promise<Electron.Rectangle>;
   onWindowResize: (callback: (size: Electron.Rectangle) => void) => void;
   getVideoList: (e: string) => Promise<Video[] | Err>;
   getThumbnail: (e: string) => Promise<string | Err>;
@@ -73,6 +74,8 @@ declare global {
     offsetY?: number;
     position?: string | null;
   }
+
+  type Markers = Record<string, number[]>;
 
   interface Succ {
     success: string;

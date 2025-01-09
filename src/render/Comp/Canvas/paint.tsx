@@ -30,26 +30,13 @@ interface Props {
   paintConfig: PaintConfig;
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
+  onDraw: () => void;
 }
 
 interface Size {
   w: number;
   h: number;
 }
-
-const AnimatedDialog = a(MouseSVG);
-
-// const MyComponent = ({
-//   children,
-//   style,
-// }: {
-//   children: React.ReactNode;
-//   style: { opacity: SpringValue<number> };
-// }) => {
-//   const AnimatedDiv = a.div;
-
-//   return <AnimatedDiv style={style}>{children}</AnimatedDiv>;
-// };
 
 const Paint = forwardRef<any, Props>(
   (
@@ -61,6 +48,7 @@ const Paint = forwardRef<any, Props>(
       paintConfig,
       setCanUndo,
       setCanRedo,
+      onDraw,
     },
     ref
   ) => {
@@ -204,13 +192,15 @@ const Paint = forwardRef<any, Props>(
       if (e.pointerType === "pen") {
         e.preventDefault();
       }
+
+      onDraw();
     };
 
     const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
       if (e.pointerType === "mouse") {
-        pressure.current = 1;
+        // pressure.current = 1;
       } else {
-        pressure.current = e.pressure;
+        // pressure.current = e.pressure;
       }
 
       const { x, y } = getMouseCoordinates(e);
@@ -421,20 +411,23 @@ const Paint = forwardRef<any, Props>(
     const setSize = (size: Size): void => {
       const ctx = getContext();
       if (canvasRef.current && ctx) {
+        console.log(size.w);
+
         if (baseDimensions.width === 0 && baseDimensions.height === 0) {
           setBaseDimensions({ width: size.w, height: size.h });
+
+          canvasRef.current.width = size.w;
+          canvasRef.current.height = size.h;
+        } else {
+          const scaleX = size.w / baseDimensions.width;
+          const scaleY = size.h / baseDimensions.height;
+          setScale({ x: scaleX, y: scaleY });
+
+          canvasRef.current.width = size.w;
+          canvasRef.current.height = size.h;
+
+          ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
         }
-
-        const scaleX = size.w / baseDimensions.width;
-        const scaleY = size.h / baseDimensions.height;
-        setScale({ x: scaleX, y: scaleY });
-
-        canvasRef.current.width = size.w;
-        canvasRef.current.height = size.h;
-
-        // スケールを適用
-        console.log(scaleX);
-        ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
 
         _setSize(size.w);
       }
@@ -572,14 +565,6 @@ const Paint = forwardRef<any, Props>(
       }
     }, [onChange]);
 
-    const mouseGuide = useSpring({
-      opacity: !onCanvas && onChange ? "1" : "0",
-      config: {
-        duration: 100,
-        easing: (t: any) => t,
-      },
-    });
-
     return (
       <div className="canvas-container" style={{ width: `${_size}px` }}>
         {action === "writing" ? (
@@ -594,7 +579,8 @@ const Paint = forwardRef<any, Props>(
               lineHeight: "120%",
               width: `${Math.max(
                 (selectedElement?.x2 || 0) - (selectedElement?.x1 || 0),
-                selectedElement?.size || 0
+                selectedElement?.size || 0,
+                100
               )}px`,
               height: `${Math.max(
                 ((selectedElement?.y2 || 0) - (selectedElement?.y1 || 0)) * 1.2,
@@ -632,15 +618,9 @@ const Paint = forwardRef<any, Props>(
           <MouseSVG
             canvas={canvasRef.current}
             size={
-              tool === "pen"
-                ? toolState.size > 10
-                  ? toolState.size
-                  : 10
-                : tool === "eraser"
-                ? toolState.size > 10
-                  ? toolState.size
-                  : 10
-                : 10
+              toolState.size > 10
+                ? toolState.size * scale.x
+                : toolState.size * scale.x
             }
             brightness={corsorColor}
             move={true}

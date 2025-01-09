@@ -76,6 +76,9 @@ const Video = forwardRef<any, VideoUIProps>(
                 (ref as RefObject<any>).current?.seekUp();
               }
             }, (1 / 12) * 1000);
+            // if (event.key === "ArrowRight") {
+            //   (ref as RefObject<any>).current?.play();
+            // }
           }, 300);
 
           isKeyPressed.current = true;
@@ -93,6 +96,8 @@ const Video = forwardRef<any, VideoUIProps>(
           clearInterval(intervalRef.current!);
           intervalRef.current = null;
           isKeyPressed.current = false;
+
+          // (ref as RefObject<any>).current?.pause();
         }
       };
 

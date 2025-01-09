@@ -1,0 +1,110 @@
+// $light: #fff;
+// $dark: #000;
+// $bg-light: #eee;
+// $bg-dark: #111;
+// $tx-light: #111;
+// $tx-dark: #eee;
+// $bg-sub-light: #ccc;
+// $bg-sub-dark: #333;
+// $tx-sub-light: #333;
+// $tx-sub-dark: #ccc;
+// $hr-light: #aaa;
+$hr-dark: #aaa;
+// $enabled-light: #ccc;
+// $enabled-dark: #333;
+// $overlay-bg-light: #ffffffcc;
+// $overlay-bg-dark: #000000cc;
+// $overlay-tx-light: #666;
+// $overlay-tx-dark: #999;
+// $video-UI-r-bg-dark: #00284e;
+// $video-UI-ok-bg-dark: #035200;
+// $video-UI-no-bg-dark: #792200;
+// $video-UI-r-bg-light: #004f99;
+// $video-UI-ok-bg-light: #059900;
+// $video-UI-no-bg-light: #b33300;
+
+// $white: #fff;
+// $black: #000;
+
+// $video-UI-bg: #000;
+// $video-UI-tx: #fff;
+// $video-UI-hover-bg: #eee;
+// $video-UI-hover-tx: #111;
+// $video-UI-r-ic: #0084ff;
+// $video-UI-ok-ic: #36ff2f;
+// $video-UI-no-ic: #ff4800;
+
+// $paint-UI-saving: #0c8b00cc;
+// $paint-UI-editing: #000000cc;
+$paint-UI-shadow-1: #111;
+$paint-UI-shadow-2: #00000033;
+$paint-UI-hover-bg: #eee;
+$paint-UI-select: #3693fd;
+// $paint-UI-sil-close: #aaa;
+// $paint-UI-sil-del: #5c5c5c;
+// $paint-UI-sil-del-hover: #cc0000;
+// $paint-UI-slider-bar: #ccc;
+// $paint-UI-slider-thumb: #555;
+// $paint-overlay-bg: $overlay-bg-dark;
+
+:root {
+  // --color: #{$dark};
+  // --bg-color: #{$bg-dark};
+  // --tx-color: #{$tx-dark};
+  // --bg-sub-color: #{$bg-sub-dark};
+  // --tx-sub-color: #{$tx-sub-dark};
+  --hr-color: #{$hr-dark};
+  // --enabled-color: #{$enabled-dark};
+  // --overlay-bg-color: #{$overlay-bg-dark};
+  // --overlay-tx-color: #{$overlay-tx-dark};
+  // --video-UI-r-bg-color: #{$video-UI-r-bg-dark};
+  // --video-UI-ok-bg-color: #{$video-UI-ok-bg-dark};
+  // --video-UI-no-bg-color: #{$video-UI-no-bg-dark};
+
+  // --white: #{$white};
+  // --black: #{$black};
+
+  // --video-UI-bg: #{$video-UI-bg};
+  // --video-UI-tx: #{$video-UI-tx};
+  // --video-UI-hover-bg: #{$video-UI-hover-bg};
+  // --video-UI-hover-tx: #{$video-UI-hover-tx};
+  // --video-UI-r-ic-color: #{$video-UI-r-ic};
+  // --video-UI-ok-ic-color: #{$video-UI-ok-ic};
+  // --video-UI-no-ic-color: #{$video-UI-no-ic};
+
+  // --paint-UI-saving: #{$paint-UI-saving};
+  // --paint-UI-editing: #{$paint-UI-editing};
+  --paint-UI-shadow-1: #{$paint-UI-shadow-1};
+  --paint-UI-shadow-2: #{$paint-UI-shadow-2};
+  --paint-UI-hover-bg: #{$paint-UI-hover-bg};
+  --paint-UI-select: #{$paint-UI-select};
+  // --paint-UI-sil-close: #{$paint-UI-sil-close};
+  // --paint-UI-sil-del: #{$paint-UI-sil-del};
+  // --paint-UI-sil-del-hover: #{$paint-UI-sil-del-hover};
+  // --paint-UI-slider-bar: #{$paint-UI-slider-bar};
+  // --paint-UI-slider-thumb: #{$paint-UI-slider-thumb};
+  // --paint-overlay-bg: #{$paint-overlay-bg};
+}
+
+// .light-theme {
+// --color: #{$light};
+// --bg-color: #{$bg-light};
+// --tx-color: #{$tx-light};
+// --bg-sub-color: #{$bg-sub-light};
+// --tx-sub-color: #{$tx-sub-light};
+// --hr-color: #{$hr-light};
+// --enabled-color: #{$enabled-light};
+// --overlay-bg-color: #{$overlay-bg-light};
+// --overlay-tx-color: #{$overlay-tx-light};
+// --video-UI-r-bg-color: #{$video-UI-r-bg-light};
+// --video-UI-ok-bg-color: #{$video-UI-ok-bg-light};
+// --video-UI-no-bg-color: #{$video-UI-no-bg-light};
+// }
+
+// .dark-theme {
+//   --color: #{$dark};
+//   --bg-color: #{$bg-dark};
+//   --tx-color: #{$tx-dark};
+//   --bg-sub-color: #{$bg-sub-dark};
+//   --tx-sub-color: #{$tx-sub-dark};
+// }

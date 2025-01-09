@@ -1,25 +1,25 @@
 .tool-bar-outer {
-  background: white;
+  // background: white;
   z-index: 50;
   color: #333;
 }
 .tool-bar-inner {
-  width: 72px;
+  width: 60px;
   height: 700px;
-  background: var(--white);
-
+  background: white;
+  padding: 20px 0;
   pointer-events: all;
 
-  border-radius: 0 5px 5px 0;
-  filter: drop-shadow(0 1px 3px var(--paint-UI-shadow-1))
-    drop-shadow(0 4px 8px var(--paint-UI-shadow-2));
+  // border-radius: 0 5px 5px 0;
+  // filter: drop-shadow(0 1px 3px var(--paint-UI-shadow-1))
+  //   drop-shadow(0 4px 8px var(--paint-UI-shadow-2));
 
   color: var(--black);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 15px;
+  justify-content: flex-start;
+  gap: 5px;
 
   input[type="radio"] {
     display: none;
@@ -43,8 +43,8 @@
   }
 
   input[type="color"] {
-    width: 50px;
-    height: 50px;
+    width: 45px;
+    height: 45px;
     background: transparent;
     border: none;
     border-radius: 5px;

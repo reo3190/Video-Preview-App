@@ -223,16 +223,6 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo }) => {
               onChange={(e) => setSize(e.target.value)}
               onBlur={(e) => handleBlur(e.target.value, setSize, "10")}
             />
-            {/* <div className="size-wrapper">
-                <input
-                    type="range"
-                    value={toolState.pen.size > 100?100 + ((toolState.pen.size - 100) / 8):toolState.pen.size}
-                    onChange={(e)=>setToolState((pre) => ({...pre, pen: {...pre.pen, size: e.target.value > 100?100 + ((e.target.value - 100) * 8):e.target.value}}))}
-                    min="0"
-                    max="150"
-                    step="0.01"
-                />
-              </div> */}
           </div>
           <div className="input-detail">
             <input
@@ -254,20 +244,10 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo }) => {
               min="0"
               max="100"
             />
-            {/* <div className="size-wrapper">
-                <input
-                    type="range"
-                    value={toolState.pen.opacity}
-                    onChange={(e)=>setToolState((pre) => ({...pre, pen: {...pre.pen, opacity: e.target.value}}))}
-                    min="0"
-                    max="1"
-                    step="0.01"
-                />
-              </div> */}
           </div>
         </div>
         <hr />
-        <div className="input-detail-wrapper">
+        {/* <div className="input-detail-wrapper">
           <div className="input-detail">
             <PiWaveSineBold size={"2rem"} />
             <input
@@ -278,16 +258,6 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo }) => {
               min="0"
               max="10"
             />
-            {/* <div className="size-wrapper">
-                <input
-                    type="range"
-                    value={toolState.pen.size > 100?100 + ((toolState.pen.size - 100) / 8):toolState.pen.size}
-                    onChange={(e)=>setToolState((pre) => ({...pre, pen: {...pre.pen, size: e.target.value > 100?100 + ((e.target.value - 100) * 8):e.target.value}}))}
-                    min="0"
-                    max="150"
-                    step="0.01"
-                />
-              </div> */}
           </div>
           <div className="input-detail">
             <LuCircleDot size={"2rem"} />
@@ -299,18 +269,8 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo }) => {
               min="0"
               max="100"
             />
-            {/* <div className="size-wrapper">
-                <input
-                    type="range"
-                    value={toolState.pen.size > 100?100 + ((toolState.pen.size - 100) / 8):toolState.pen.size}
-                    onChange={(e)=>setToolState((pre) => ({...pre, pen: {...pre.pen, size: e.target.value > 100?100 + ((e.target.value - 100) * 8):e.target.value}}))}
-                    min="0"
-                    max="150"
-                    step="0.01"
-                />
-              </div> */}
           </div>
-        </div>
+        </div>  */}
         <div className="history">
           <button onClick={() => pRef.current?.undo()} disabled={!canUndo}>
             <IoArrowUndo size={"2rem"} />

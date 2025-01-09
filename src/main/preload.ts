@@ -21,7 +21,7 @@ const electronHandler = {
     },
   },
 
-  getWindowSize: async () => {
+  getWindowSize: async (): Promise<Electron.Rectangle> => {
     return await ipcRenderer.invoke("get-window-size");
   },
   onWindowResize: (callback: (size: Electron.Rectangle) => void) => {

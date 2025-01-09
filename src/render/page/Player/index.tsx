@@ -51,53 +51,55 @@ const Player = () => {
     };
   }, []);
 
+  const handleAddMarker = () => {
+    videoRef.current?.addMarker();
+  };
+
   return (
     <>
       <button onClick={() => handleTop()}>back</button>
-      {curVideo ? (
-        <div className="player-wrapper">
-          <div className="tool-bar-outer">
-            <ToolBar pRef={null} canUndo={true} canRedo={true} />
+
+      <div className="player-wrapper">
+        <div className="tool-bar-outer">
+          <ToolBar pRef={null} canUndo={true} canRedo={true} />
+        </div>
+        <div className="canvas-video">
+          <div className="canvas-wrapper">
+            <Canvas ref={canvasRef} onDraw={handleAddMarker} />
           </div>
-          <div className="canvas-video">
-            <div className="canvas-wrapper">
-              <Canvas size={windowSize.width} ref={canvasRef} />
-            </div>
-            <div className="video-container">
+          <div className="video-container">
+            {curVideo ? (
               <Video
                 path={curVideo.path}
                 size={windowSize.width}
                 ref={videoRef}
               />
-              <div className="button-wrapper">
-                <button
-                  className="seekButton"
-                  onClick={() => seekToTop(videoRef)}
-                >
-                  <FaAnglesLeft size={"1.5rem"} />
-                </button>
-                <button
-                  className="seekButton"
-                  onClick={() => seekDown(videoRef)}
-                >
-                  <FaAngleLeft size={"1.5rem"} />
-                </button>
-                <button className="seekButton" onClick={() => seekUp(videoRef)}>
-                  <FaAngleRight size={"1.5rem"} />
-                </button>
-                <button
-                  className="seekButton"
-                  onClick={() => seekToLast(videoRef)}
-                >
-                  <FaAnglesRight size={"1.5rem"} />
-                </button>
-              </div>
+            ) : (
+              <div>None Video</div>
+            )}
+            <div className="button-wrapper">
+              <button
+                className="seekButton"
+                onClick={() => seekToTop(videoRef)}
+              >
+                <FaAnglesLeft size={"1.5rem"} />
+              </button>
+              <button className="seekButton" onClick={() => seekDown(videoRef)}>
+                <FaAngleLeft size={"1.5rem"} />
+              </button>
+              <button className="seekButton" onClick={() => seekUp(videoRef)}>
+                <FaAngleRight size={"1.5rem"} />
+              </button>
+              <button
+                className="seekButton"
+                onClick={() => seekToLast(videoRef)}
+              >
+                <FaAnglesRight size={"1.5rem"} />
+              </button>
             </div>
           </div>
         </div>
-      ) : (
-        <div>None Video</div>
-      )}
+      </div>
     </>
   );
 };
