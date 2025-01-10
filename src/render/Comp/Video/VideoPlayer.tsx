@@ -12,6 +12,7 @@ import videojs from "video.js";
 import { VideoFrame } from "./VideoFrame";
 import Player from "video.js/dist/types/player";
 import { num2date } from "../../../hook/api";
+import { useDataContext } from "../../../hook/UpdateContext";
 
 const fps = 24;
 
@@ -22,6 +23,8 @@ interface VideoPlayerProps {
   onPlay?: () => void;
   onPause?: () => void;
   options?: any;
+  onSeek: (frame: number) => void;
+  markers: Marker;
 }
 
 // 公開するメソッドの型
@@ -35,16 +38,32 @@ export interface VideoPlayerHandle {
 
 const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   (
-    { currentTime, onTimeUpdate, setCurrentTime, onPlay, onPause, options },
+    {
+      currentTime,
+      onTimeUpdate,
+      setCurrentTime,
+      onPlay,
+      onPause,
+      options,
+      onSeek,
+      markers,
+    },
     ref
   ) => {
+    const { curVideo, videoMarkers } = useDataContext();
+    if (!curVideo) return;
+
     const videoRef = useRef<HTMLDivElement | null>(null);
     const playerRef = useRef<Player | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [frame, setFrame] = useState(0);
     const frameRef = useRef<number>(0);
+    const [frame, setFrame] = useState<number>(1);
 
-    const [markers, setMarkers] = useState<number[]>([0.5, 1.0]);
+    const v = videoMarkers[curVideo.path];
+
+    const [markerFrames, setMarkerFrames] = useState<number[]>(
+      Object.keys(v || {}).map(Number)
+    );
 
     // Video.js 初期化
     useEffect(() => {
@@ -78,11 +97,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           // setCurrentTime(player.currentTime());
         });
 
+        // player.on("timeupdate", () => {
+        //   // onSeek(frameRef.current);
+        // });
+
         const videoFrame = new VideoFrame({
           id: "video_html5_api",
           frameRate: fps,
           callback: (frame: number) => {
+            frameRef.current = frame;
             setFrame(frame);
+            setSlider(frame);
+            onSeek(frameRef.current);
           },
         });
 
@@ -92,9 +118,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           const p = getProgressBarElement();
           if (!p) return;
 
-          for (var i = 0; i < markers.length; i++) {
-            makeMarkerElement(p, markers[i]);
+          for (var i = 0; i < markerFrames.length; i++) {
+            makeMarkerElement(p, markerFrames[i]);
           }
+
+          const el = document.createElement("div");
+          el.className = "vjs-marker-frame";
+          const _total_float = (playerRef.current.duration() || 1) * fps;
+          const _total =
+            Math.round((playerRef.current.duration() || 1) * fps) + 1;
+          const wid = (1 / _total_float) * 100;
+          el.style.width = wid + "%";
+          p.append(el);
         });
       }
     }, [options, videoRef]);
@@ -144,34 +179,42 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const setWidth = (w: number) => {
       if (playerRef.current) {
         playerRef.current.width(w);
-        console.log(playerRef.current.width());
       }
     };
 
-    const getCurrentFrame = (): number => {
+    const getCurrentTime = (): number => {
       return playerRef.current?.currentTime() || 0;
     };
 
+    const getCurrentFrame = (): number => {
+      return frame;
+    };
+
+    const frame2time = () => {};
+
     const getMarkers = () => {};
 
-    const addMarker = (time: number = getCurrentFrame()) => {
+    const addMarker = (frame: number = getCurrentFrame()) => {
       if (!playerRef.current || !videoRef.current) return;
-      if (markers.includes(time)) return;
-      setMarkers((pre) => [...pre, time]);
+      if (markerFrames.includes(frame)) return;
+      setMarkerFrames((pre) => [...pre, frame]);
       const p = getProgressBarElement();
       if (p) {
-        makeMarkerElement(p, time);
+        makeMarkerElement(p, frame);
       }
     };
 
-    const makeMarkerElement = (p: Element, time: number) => {
+    const makeMarkerElement = (p: Element, frame: number) => {
       if (!playerRef.current) return null;
-      const total = playerRef.current.duration();
-      const left = (time / (total || 1)) * 100 + "%";
+      const total_float = (playerRef.current.duration() || 1) * fps;
+      const total = Math.ceil((playerRef.current.duration() || 1) * fps) + 1;
+      const left = (frame / total_float) * 100;
       const el = document.createElement("div");
       el.className = "vjs-marker";
-      el.style.left = left;
-      el.setAttribute("data-time", String(time));
+      const wid = (1 / total_float) * 100;
+      el.style.left = left - wid + "%";
+      el.style.width = wid + "%";
+      el.setAttribute("data-time", String(frame));
       p.append(el);
     };
 
@@ -181,6 +224,23 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           ".vjs-control-bar .vjs-progress-control .vjs-progress-holder"
         ) || null
       );
+    };
+
+    const setSlider = (f: number) => {
+      if (!playerRef.current) return null;
+      const p = getSliderBarElement() as HTMLElement | null;
+      if (!p) return;
+      const total_float = (playerRef.current.duration() || 1) * fps;
+
+      const total = Math.ceil((playerRef.current.duration() || 1) * fps) + 1;
+      const left = (f / total_float) * 100;
+      const wid = (1 / total_float) * 100;
+      p.style.left = left - wid + "%";
+      // p.style.width = wid + "%";
+    };
+
+    const getSliderBarElement = (): Element | null => {
+      return videoRef.current?.querySelector(".vjs-marker-frame") || null;
     };
 
     // 親コンポーネントに公開するメソッド

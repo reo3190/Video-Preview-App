@@ -7,13 +7,15 @@ import Videojs from "./VideoPlayer";
 type VideoUIProps = {
   path: string;
   size?: number;
+  onSeek: (frame: number) => void;
+  markers: Marker;
   onTimeUpdate?: (time: number) => void;
   onPlay?: () => void;
   onPause?: () => void;
 };
 
 const Video = forwardRef<any, VideoUIProps>(
-  ({ path, onTimeUpdate, onPlay, onPause, size }, ref) => {
+  ({ path, onSeek, onTimeUpdate, onPlay, onPause, size, markers }, ref) => {
     // const { currentTime, setCurrentTime } = useDataContext();
     const currentTime = 10;
     const setCurrentTime = () => {};
@@ -122,6 +124,8 @@ const Video = forwardRef<any, VideoUIProps>(
           onPause={onPause}
           currentTime={currentTime}
           setCurrentTime={setCurrentTime}
+          onSeek={onSeek}
+          markers={markers}
         />
       </>
     );

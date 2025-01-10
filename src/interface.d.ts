@@ -75,7 +75,8 @@ declare global {
     position?: string | null;
   }
 
-  type Markers = Record<string, number[]>;
+  type Marker = Record<number, PaintElement[][]>;
+  type Markers = Record<string, Marker>;
 
   interface Succ {
     success: string;

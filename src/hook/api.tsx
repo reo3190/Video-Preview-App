@@ -18,7 +18,6 @@ export const makeDateList = (videos: Video[]) => {
 };
 
 export const Filter = (List: Video[], Filter: Filter): Video[] => {
-  console.log(Filter);
   const filteredList = List.filter((e) => {
     const date = e.directory.includes(Filter.date) || Filter.date === "all";
     const check =
@@ -28,7 +27,6 @@ export const Filter = (List: Video[], Filter: Filter): Video[] => {
         Filter.check === "no") ||
       Filter.check === "all";
     const words = includeWords(e.name, Filter.wordList);
-    console.log(date && check && words);
     return date && check && words;
   });
 

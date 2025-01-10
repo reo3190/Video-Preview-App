@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, FC } from "react";
 import { useDataContext } from "../../../hook/UpdateContext";
 import { useNavigate } from "react-router-dom";
-import VideoSeeker from "./seek";
+// import VideoSeeker from "./seek";
 import { IoReturnDownForwardSharp } from "react-icons/io5";
 import { isErr } from "../../../hook/api";
 

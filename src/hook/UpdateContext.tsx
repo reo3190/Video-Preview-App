@@ -45,6 +45,8 @@ interface DataContext {
   setActivePaintTool: (e: PaintToolName) => void;
   paintConfig: PaintConfig;
   setPaintConfig: (update: Partial<PaintConfig>) => void;
+  videoMarkers: Markers;
+  setVideoMarkers: (path: string, marker: Marker) => void;
 }
 
 const defaultContext: DataContext = {
@@ -86,6 +88,8 @@ const defaultContext: DataContext = {
   setActivePaintTool: () => {},
   paintConfig: { smooth: 0, pressure: 0 },
   setPaintConfig: () => {},
+  videoMarkers: {},
+  setVideoMarkers: () => {},
 };
 
 const datactx = createContext<DataContext>(defaultContext);
@@ -117,6 +121,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   );
   const [paintConfig, setPaintConfig] = useState<PaintConfig>(
     defaultContext.paintConfig
+  );
+  const [videoMarkers, setVideoMarkers] = useState<Record<string, Marker>>(
+    defaultContext.videoMarkers
   );
 
   const updateWindowSize = useCallback((size: Electron.Rectangle): void => {
@@ -218,6 +225,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     []
   );
 
+  const updateVideoMarkers = useCallback((path: string, marker: Marker) => {
+    setVideoMarkers((pre) => ({ ...pre, [path]: marker }));
+  }, []);
+
   return (
     <datactx.Provider
       value={{
@@ -247,6 +258,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setActivePaintTool: updateActivePaintTool,
         paintConfig,
         setPaintConfig: updatePaintConfig,
+        videoMarkers,
+        setVideoMarkers: updateVideoMarkers,
       }}
     >
       {children}

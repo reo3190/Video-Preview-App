@@ -1,7 +1,8 @@
 import { useState } from "react";
 
 const useHistory = (
-  initialState: PaintElement[]
+  initialIndex: number,
+  initialState: PaintElement[][]
 ): {
   elements: PaintElement[];
   setElements: (
@@ -17,8 +18,8 @@ const useHistory = (
   index: number;
   setIndex: React.Dispatch<React.SetStateAction<number>>;
 } => {
-  const [index, setIndex] = useState<number>(0);
-  const [history, setHistory] = useState<PaintElement[][]>([initialState]);
+  const [index, setIndex] = useState<number>(initialIndex - 1);
+  const [history, setHistory] = useState<PaintElement[][]>(initialState);
 
   const setState = (
     action: ((e: PaintElement[]) => PaintElement[]) | PaintElement[],

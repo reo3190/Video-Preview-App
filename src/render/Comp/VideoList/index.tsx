@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useDataContext } from "../../../hook/UpdateContext";
 import { isErr } from "../../../hook/api";
-import VideoSeeker from "./seek";
 import Pagination from "./pagination";
 import CahcheVideo from "./cache";
 

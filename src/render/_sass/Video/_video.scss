@@ -48,25 +48,36 @@
 
 .vjs-marker {
   position: absolute;
-  background: red;
+  background: blue;
   width: 5px;
-  height: 110%;
-  top: -5%;
+  height: 200%;
+  top: -400%;
   z-index: 30;
-  margin-left: -3px;
+  // margin-left: -3px;
 }
 
-.vjs-marker:hover span {
-  opacity: 1;
-}
+// .vjs-marker:hover span {
+//   opacity: 1;
+// }
 
-.vjs-marker span {
+// .vjs-marker span {
+//   position: absolute;
+//   bottom: 15px;
+//   opacity: 0;
+//   margin-left: -20px;
+//   z-index: 90;
+//   background: rgba(0, 0, 0, 0.8);
+//   padding: 8px;
+//   font-size: 10px;
+// }
+
+.vjs-marker-frame {
   position: absolute;
-  bottom: 15px;
-  opacity: 0;
-  margin-left: -20px;
-  z-index: 90;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 8px;
-  font-size: 10px;
+  top: -50%;
+  height: 200%;
+  background: red;
+}
+
+.vjs-slider-bar {
+  display: none !important;
 }

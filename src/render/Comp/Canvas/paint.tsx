@@ -30,7 +30,7 @@ interface Props {
   paintConfig: PaintConfig;
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
-  onDraw: () => void;
+  onDraw: (history: PaintElement[][]) => void;
 }
 
 interface Size {
@@ -54,6 +54,7 @@ const Paint = forwardRef<any, Props>(
   ) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const { curVideo, setVideoMarkers } = useDataContext();
 
     const {
       elements,
@@ -66,7 +67,7 @@ const Paint = forwardRef<any, Props>(
       setHistory,
       index,
       setIndex,
-    } = useHistory([]);
+    } = useHistory(1, [[]]);
     const [selectedElement, setSelectedElement] = useState<PaintElement | null>(
       null
     );
@@ -76,8 +77,6 @@ const Paint = forwardRef<any, Props>(
     const backBrightness = useRef(0);
     const [corsorColor, setCorsorColor] = useState(true);
     // const pressedKeys = usePressedKeys();
-    const [frame, setFrame] = useState(null);
-    const [padding, setPadding] = useState(0);
     const [focus, setFocus] = useState(true);
 
     const [_size, _setSize] = useState<number>(0);
@@ -88,7 +87,6 @@ const Paint = forwardRef<any, Props>(
       clear();
 
       canvasCtx?.save();
-      // canvasCtx?.scale(scale.x, scale.x);
 
       elements.forEach((element, i) => {
         if (action === "writing" && selectedElement?.id === element.id) return;
@@ -192,8 +190,6 @@ const Paint = forwardRef<any, Props>(
       if (e.pointerType === "pen") {
         e.preventDefault();
       }
-
-      onDraw();
     };
 
     const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -305,6 +301,9 @@ const Paint = forwardRef<any, Props>(
 
       setAction("none");
       setSelectedElement(null);
+
+      // saveHistory();
+      onDraw(history);
     };
 
     const handleBlur = (e: any) => {
@@ -411,8 +410,6 @@ const Paint = forwardRef<any, Props>(
     const setSize = (size: Size): void => {
       const ctx = getContext();
       if (canvasRef.current && ctx) {
-        console.log(size.w);
-
         if (baseDimensions.width === 0 && baseDimensions.height === 0) {
           setBaseDimensions({ width: size.w, height: size.h });
 
@@ -486,6 +483,7 @@ const Paint = forwardRef<any, Props>(
       history: PaintElement[][];
       index: number;
     }): void => {
+      clear();
       setHistory(e.history);
       setIndex(e.index);
     };
@@ -520,6 +518,12 @@ const Paint = forwardRef<any, Props>(
       // setZoomOffset({ x: 0, y: 0 });
       // setZoom(1);
     };
+
+    // const saveHistory = () => {
+    //   if (curVideo?.path) {
+    //     setVideoMarkers(curVideo.path, history);
+    //   }
+    // };
 
     useImperativeHandle(ref, () => ({
       getContext,
