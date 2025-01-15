@@ -2,7 +2,8 @@ import { useState } from "react";
 
 const useHistory = (
   initialIndex: number,
-  initialState: PaintElement[][]
+  initialState: PaintElement[][],
+  onDraw: (history: PaintElement[][], index: number, scale?: Size) => void
 ): {
   elements: PaintElement[];
   setElements: (
@@ -38,9 +39,19 @@ const useHistory = (
     }
   };
 
-  const undo = () => index > 0 && setIndex((prevState) => prevState - 1);
-  const redo = () =>
-    index < history.length - 1 && setIndex((prevState) => prevState + 1);
+  const undo = () => {
+    if (index > 0) {
+      setIndex((prevState) => prevState - 1);
+      onDraw(history, index - 1);
+    }
+  };
+  const redo = () => {
+    if (index < history.length - 1) {
+      setIndex((prevState) => prevState + 1);
+      onDraw(history, index + 1);
+    }
+  };
+
   const canUndo = () => {
     return index > 0;
   };

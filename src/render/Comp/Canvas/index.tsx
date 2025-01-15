@@ -4,20 +4,26 @@ import Paint from "./paint";
 import ToolBar from "./toolBar";
 
 interface Props {
+  baseSize: Size;
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
-  onDraw: (history: PaintElement[][]) => void;
+  onDraw: (history: PaintElement[][], index: number) => void;
 }
 const Canvas = forwardRef<any, Props>(
-  ({ setCanUndo, setCanRedo, onDraw }, ref) => {
+  ({ baseSize, setCanUndo, setCanRedo, onDraw }, ref) => {
     const { curVideo, paintTool, activePaintTool, windowSize, videoMarkers } =
       useDataContext();
+
+    if (!curVideo) {
+      return <></>;
+    }
 
     return (
       <>
         <div className="canvas-frame">
           <Paint
-            size={{ w: windowSize.width, h: (windowSize.width * 9) / 16 }}
+            baseSize={baseSize}
+            size={baseSize}
             calcBrightness={() => 0}
             tool={activePaintTool}
             toolState={paintTool[activePaintTool]}

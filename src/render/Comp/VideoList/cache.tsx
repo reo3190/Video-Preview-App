@@ -38,8 +38,9 @@ const CahcheVideo: FC<Props> = ({ video }) => {
   };
 
   const navigate = useNavigate();
-  const handlePlay = (video: Video) => {
-    navigate("/play");
+  const handlePlay = async (video: Video) => {
+    const res = await window.electron.getVideoMeta(video.path);
+    navigate("/play", { state: { res } });
     setCurVideo(video);
   };
 

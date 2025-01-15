@@ -58,10 +58,38 @@ const Video = forwardRef<any, VideoUIProps>(
 
     useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
-        if (
+        if (event.ctrlKey || event.metaKey) {
+          if (event.key === "ArrowLeft") {
+            const markerFrames = Object.keys(markers || {}).map(Number);
+            const currentFrame = (
+              ref as RefObject<any>
+            ).current?.getCurrentFrame();
+            const lessCurrent = markerFrames.filter(
+              (num) => num < currentFrame
+            );
+            if (lessCurrent.length !== 0) {
+              const next = Math.max(...lessCurrent);
+              console.log(next);
+              (ref as RefObject<any>).current?.setCurrentFrame(next);
+            }
+          }
+          if (event.key === "ArrowRight") {
+            const markerFrames = Object.keys(markers || {}).map(Number);
+            const currentFrame = (
+              ref as RefObject<any>
+            ).current?.getCurrentFrame();
+            const moreCurrent = markerFrames.filter(
+              (num) => num > currentFrame
+            );
+            if (moreCurrent.length !== 0) {
+              const next = Math.min(...moreCurrent);
+              console.log(next);
+              (ref as RefObject<any>).current?.setCurrentFrame(next);
+            }
+          }
+        } else if (
           (event.key === "ArrowLeft" || event.key === "ArrowRight") &&
-          !isKeyPressed.current &&
-          document.body.style.overflowY !== "hidden"
+          !isKeyPressed.current
         ) {
           event.preventDefault();
           if (event.key === "ArrowLeft") {
@@ -78,15 +106,12 @@ const Video = forwardRef<any, VideoUIProps>(
                 (ref as RefObject<any>).current?.seekUp();
               }
             }, (1 / 12) * 1000);
-            // if (event.key === "ArrowRight") {
-            //   (ref as RefObject<any>).current?.play();
-            // }
           }, 300);
 
           isKeyPressed.current = true;
         }
 
-        if (event.key === " " && document.body.style.overflowY !== "hidden") {
+        if (event.key === " ") {
           event.preventDefault();
           (ref as RefObject<any>).current?.clickVideo();
         }
@@ -98,8 +123,6 @@ const Video = forwardRef<any, VideoUIProps>(
           clearInterval(intervalRef.current!);
           intervalRef.current = null;
           isKeyPressed.current = false;
-
-          // (ref as RefObject<any>).current?.pause();
         }
       };
 
@@ -112,7 +135,7 @@ const Video = forwardRef<any, VideoUIProps>(
         clearTimeout(timerRef.current!);
         clearInterval(intervalRef.current!);
       };
-    }, [ref]);
+    }, [ref, markers]);
 
     return (
       <>

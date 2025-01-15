@@ -15,6 +15,11 @@ const FrameRates = {
   high: 60,
 } as const;
 
+const round = (n: number): number => {
+  const _n = Math.round(n * 1000);
+  return _n / 1000;
+};
+
 class VideoFrame {
   private video: HTMLVideoElement;
   private frameRate: number;
@@ -39,7 +44,7 @@ class VideoFrame {
   }
 
   private get(): number {
-    return Math.floor(this.video.currentTime * this.frameRate) + 1;
+    return Math.floor(round(this.video.currentTime) * this.frameRate) + 1;
   }
 
   private startFrameTracking(): void {

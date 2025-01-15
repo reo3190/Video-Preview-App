@@ -1,12 +1,15 @@
 import path from "path";
 import fs from "fs";
-import { BrowserWindow, app, ipcMain } from "electron";
+import { BrowserWindow, app, ipcMain, Menu, dialog } from "electron";
 import { exec, spawn } from "child_process";
 import {
+  getVideoMeta,
   getVideoDuration,
   generateThumbnail,
   generateThumbnails,
   Convert2HLS_All,
+  saveFrameImage,
+  getCaputureData,
 } from "./utils/ffmpeg";
 import { isErr } from "../hook/api";
 import { getVideoList } from "./utils/video";
@@ -43,6 +46,36 @@ app.whenReady().then(() => {
     return res;
   });
 
+  const menuTemplate = [
+    {
+      label: "開く",
+      submenu: [
+        {
+          label: "ファイル",
+          click() {},
+        },
+        {
+          label: "フォルダ",
+          click() {},
+        },
+      ],
+    },
+    {
+      label: "書き出し",
+      submenu: [
+        {
+          label: "画像",
+          click() {
+            mainWindow.webContents.send("save-images");
+          },
+        },
+      ],
+    },
+  ];
+
+  const menu = Menu.buildFromTemplate(menuTemplate);
+  Menu.setApplicationMenu(menu);
+
   // レンダラープロセスをロード
   mainWindow.loadFile("dist/index.html");
 });
@@ -62,7 +95,7 @@ app.once("window-all-closed", () => app.quit());
 ipcMain.handle(
   "get-video-list",
   async (_, inputPath: string): Promise<Video[] | Err> => {
-    const res = getVideoList(inputPath);
+    const res = await getVideoList(inputPath);
     return res;
   }
 );
@@ -119,6 +152,7 @@ ipcMain.handle(
 );
 
 import { Worker } from "worker_threads";
+import { TbArrowWaveLeftDown } from "react-icons/tb";
 
 const workers: any[] = [];
 const maxWorkers = 100; // 同時に実行する最大スレッド数
@@ -187,6 +221,104 @@ ipcMain.handle(
     return output;
   }
 );
+
+ipcMain.handle(
+  "get-video-meta",
+  async (_, videoPath: string): Promise<any | Err> => {
+    const res = await getVideoMeta(videoPath);
+    return res;
+  }
+);
+
+ipcMain.handle(
+  "get-caputure-data",
+  async (
+    _,
+    videoPath: string,
+    data: PaintData[]
+  ): Promise<{ [key: number]: string }> => {
+    // data.forEach((d, i) => {
+    return getCaputureData(videoPath, data);
+    // });
+  }
+);
+
+ipcMain.handle(
+  "save-composite-images",
+  async (
+    _,
+    videoPath: string,
+    data: {
+      [x: number]: string;
+    }
+  ) => {
+    try {
+      // ダイアログで保存先を選択させる
+      const result = await dialog.showOpenDialog({
+        properties: ["openDirectory"],
+      });
+
+      if (result.canceled || !result.filePaths.length) {
+        throw new Error("保存先が選択されていません。");
+      }
+
+      // 保存先ディレクトリのパス
+      const saveDir = result.filePaths[0];
+
+      // videoPathからファイル名（拡張子なし）を取得
+      const videoName = path.basename(videoPath, path.extname(videoPath));
+
+      // 新しいフォルダを作成
+      const folderPath = path.join(saveDir, videoName);
+      if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath);
+      }
+
+      // dataオブジェクトの中のbase64をファイルとして保存
+      for (const [key, base64] of Object.entries(data)) {
+        const filePath = path.join(folderPath, `${key}.png`);
+
+        // base64データをバイナリに変換
+        const base64Data = base64.split(",")[1]; // data:image/png;base64, を除去
+        const buffer = Buffer.from(base64Data, "base64");
+
+        // ファイルとして保存
+        fs.writeFileSync(filePath, buffer);
+      }
+
+      return { success: true, message: "画像を保存しました。" };
+    } catch (error) {
+      console.error(error);
+      // return { success: false, message: error.message };
+    }
+  }
+);
+
+// ipcMain.handle(
+//   "save-images-select-video",
+//   async (_, videoPath: string, data: PaintData[]): Promise<void> => {
+//     try {
+//       const result = await dialog.showOpenDialog({
+//         properties: ["openDirectory"], // フォルダ選択
+//         title: "Select Save Folder",
+//       });
+
+//       if (!result.canceled) {
+//         const savePath = result.filePaths[0];
+//         if (!fs.existsSync(savePath)) {
+//           fs.mkdirSync(savePath, { recursive: true });
+//         }
+
+//         data.forEach((d, i) => {
+//           const outputImagePath = path.join(savePath, `image_${d.frame}.png`);
+//           saveFrameImage(videoPath, d, savePath);
+//         });
+//       }
+//     } catch (error) {
+//       console.error("Error selecting save path:", error);
+//     }
+//   }
+// );
 
 // ipcMain.handle("select-video", async (_, path: string): Promise => {
 //   const fileData = fs.readFileSync(path); // バイナリデータとして読み込む

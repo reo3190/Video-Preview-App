@@ -3,6 +3,7 @@ import type { Configuration } from "webpack";
 import CopyPlugin from "copy-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
+import path from "path";
 
 // 開発者モードか否かで処理を分岐する
 const isDev = process.env.NODE_ENV === "development";
@@ -19,7 +20,7 @@ const common: Configuration = {
    * macOS でビルドに失敗する場合のワークアラウンド
    * https://github.com/yan-foto/electron-reload/issues/71
    */
-  externals: ["fsevents"],
+  externals: ["fsevents", "canvas"],
   // 出力先：デフォルトは "dist"
   output: {
     // 画像などのアセット類は "dist/assets" フォルダへ配置する
@@ -67,6 +68,7 @@ const common: Configuration = {
       },
     ],
   },
+
   // plugins: [
   //   new CopyPlugin({
   //     patterns: [
@@ -94,6 +96,7 @@ const main: Configuration = {
   // 共通設定を読み込み
   ...common,
   target: "electron-main",
+  // target: "node",
   // エントリーファイル（チャンク名の "main.js" として出力される）
   entry: {
     main: "./src/main/main.ts",

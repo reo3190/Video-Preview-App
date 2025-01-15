@@ -23,6 +23,7 @@ import {
 import { useDataContext } from "../../../hook/UpdateContext";
 
 interface Props {
+  baseSize: Size;
   size: Size;
   calcBrightness: (x: number, y: number, size: number) => number;
   tool: PaintToolName;
@@ -30,7 +31,7 @@ interface Props {
   paintConfig: PaintConfig;
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
-  onDraw: (history: PaintElement[][]) => void;
+  onDraw: (history: PaintElement[][], index: number, scale?: Size) => void;
 }
 
 interface Size {
@@ -41,6 +42,7 @@ interface Size {
 const Paint = forwardRef<any, Props>(
   (
     {
+      baseSize,
       size,
       calcBrightness,
       tool,
@@ -67,7 +69,7 @@ const Paint = forwardRef<any, Props>(
       setHistory,
       index,
       setIndex,
-    } = useHistory(1, [[]]);
+    } = useHistory(1, [[]], onDraw);
     const [selectedElement, setSelectedElement] = useState<PaintElement | null>(
       null
     );
@@ -80,7 +82,9 @@ const Paint = forwardRef<any, Props>(
     const [focus, setFocus] = useState(true);
 
     const [_size, _setSize] = useState<number>(0);
-    const [scale, setScale] = useState({ x: 1, y: 1 });
+    const [scale, setScale] = useState<Size>({ w: 1, h: 1 });
+
+    const [baseDimensions, setBaseDimensions] = useState<Size>(baseSize);
 
     useLayoutEffect(() => {
       const canvasCtx = getContext();
@@ -303,7 +307,8 @@ const Paint = forwardRef<any, Props>(
       setSelectedElement(null);
 
       // saveHistory();
-      onDraw(history);
+      console.log(elements.length - 1);
+      onDraw(history, index, baseDimensions);
     };
 
     const handleBlur = (e: any) => {
@@ -367,8 +372,8 @@ const Paint = forwardRef<any, Props>(
     const getMouseCoordinates = (
       e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
     ): { x: number; y: number } => {
-      const x = e.nativeEvent.offsetX / scale.x;
-      const y = e.nativeEvent.offsetY / scale.y;
+      const x = e.nativeEvent.offsetX / scale.w;
+      const y = e.nativeEvent.offsetY / scale.h;
       return { x, y };
     };
 
@@ -402,23 +407,18 @@ const Paint = forwardRef<any, Props>(
     //   }
     // };
 
-    const [baseDimensions, setBaseDimensions] = useState({
-      width: 0,
-      height: 0,
-    });
-
     const setSize = (size: Size): void => {
       const ctx = getContext();
       if (canvasRef.current && ctx) {
-        if (baseDimensions.width === 0 && baseDimensions.height === 0) {
-          setBaseDimensions({ width: size.w, height: size.h });
+        if (baseDimensions.w === 0 && baseDimensions.h === 0) {
+          setBaseDimensions({ w: size.w, h: size.h });
 
           canvasRef.current.width = size.w;
           canvasRef.current.height = size.h;
         } else {
-          const scaleX = size.w / baseDimensions.width;
-          const scaleY = size.h / baseDimensions.height;
-          setScale({ x: scaleX, y: scaleY });
+          const scaleX = size.w / baseDimensions.w;
+          const scaleY = size.h / baseDimensions.h;
+          setScale({ w: scaleX, h: scaleY });
 
           canvasRef.current.width = size.w;
           canvasRef.current.height = size.h;
@@ -623,33 +623,13 @@ const Paint = forwardRef<any, Props>(
             canvas={canvasRef.current}
             size={
               toolState.size > 10
-                ? toolState.size * scale.x
-                : toolState.size * scale.x
+                ? toolState.size * scale.w
+                : toolState.size * scale.h
             }
             brightness={corsorColor}
             move={true}
           />
         )}
-        {/* {toolState.tool !== "text" && (
-          // <a.div style={mouseGuide}>
-          <MouseSVG
-            canvas={canvasRef.current}
-            size={
-              toolState.tool === "pen"
-                ? toolState.size > 10
-                  ? toolState.size
-                  : 10
-                : toolState.tool === "eraser"
-                ? toolState.size > 10
-                  ? toolState.size
-                  : 10
-                : 10
-            }
-            brightness={corsorColor}
-            move={false}
-          />
-          // </a.div>
-        )} */}
       </div>
     );
   }

@@ -28,6 +28,7 @@ const FormTop = () => {
   const enterPath = async (p: string) => {
     try {
       const res = await window.electron.getVideoList(p);
+      console.log(res);
       if (isErr(res)) return;
       setVideoList(res);
       setFilteredVideoList(Filter(res, filter));

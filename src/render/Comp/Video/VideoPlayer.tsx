@@ -15,6 +15,10 @@ import { num2date } from "../../../hook/api";
 import { useDataContext } from "../../../hook/UpdateContext";
 
 const fps = 24;
+const round = (n: number): number => {
+  const _n = Math.round(n * 1000);
+  return _n / 1000;
+};
 
 interface VideoPlayerProps {
   currentTime: number;
@@ -148,7 +152,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         const currentTime = playerRef.current.currentTime();
 
         if (duration !== undefined && currentTime !== undefined) {
-          const seekTime = Math.min(duration, currentTime + 1.001 / fps);
+          const seekTime = round(
+            Math.min(duration, round(currentTime) + 1.0 / fps)
+          );
+          console.log(seekTime);
           playerRef.current.currentTime(seekTime);
         }
       }
@@ -160,7 +167,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         const currentTime = playerRef.current.currentTime();
 
         if (duration !== undefined && currentTime !== undefined) {
-          const seekTime = Math.max(0, currentTime - 1.001 / fps);
+          const seekTime = round(Math.max(0, round(currentTime) - 1.0 / fps));
           playerRef.current.currentTime(seekTime);
         }
       }
@@ -190,9 +197,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       return frame;
     };
 
-    const frame2time = () => {};
-
-    const getMarkers = () => {};
+    const setCurrentFrame = (frame: number): void => {
+      const halfFrame = 1 / fps / 2;
+      const time = round(frame / fps - halfFrame);
+      console.log(time);
+      playerRef.current?.currentTime(time);
+    };
 
     const addMarker = (frame: number = getCurrentFrame()) => {
       if (!playerRef.current || !videoRef.current) return;
@@ -202,6 +212,13 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (p) {
         makeMarkerElement(p, frame);
       }
+    };
+
+    const removeMarker = (frame: number) => {
+      if (!playerRef.current || !videoRef.current) return;
+      if (!markerFrames.includes(frame)) return;
+      setMarkerFrames((pre) => pre.filter((e) => e !== frame));
+      removeMarkerElement(frame);
     };
 
     const makeMarkerElement = (p: Element, frame: number) => {
@@ -216,6 +233,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       el.style.width = wid + "%";
       el.setAttribute("data-time", String(frame));
       p.append(el);
+    };
+
+    const removeMarkerElement = (frame: number) => {
+      if (!playerRef.current) return;
+      const el = document.querySelector(`[data-time="${frame}"]`);
+      el?.remove();
     };
 
     const getProgressBarElement = (): Element | null => {
@@ -258,8 +281,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       getCurrentTime: () => playerRef.current?.currentTime() || 0,
       setCurrentTime: (time: number) => playerRef.current?.currentTime(time),
       getCurrentFrame: () => getCurrentFrame(),
+      setCurrentFrame: (f: number) => setCurrentFrame(f),
       setWidth: (w: number) => setWidth(w),
       addMarker: (time: number) => addMarker(time),
+      removeMarker: (f: number) => removeMarker(f),
     }));
 
     return (

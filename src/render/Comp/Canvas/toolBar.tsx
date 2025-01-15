@@ -20,9 +20,10 @@ interface Props {
   pRef: any;
   canUndo: boolean;
   canRedo: boolean;
+  removeMarker: () => void;
 }
 
-const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo }) => {
+const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
   const {
     paintTool,
     setPaintTool,
@@ -124,6 +125,48 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo }) => {
     // opacityRef.current = String(getOpacity(true));
   }, [activePaintTool]);
 
+  // useEffect(() => {
+  //   const handleKey = (e) => {
+  //     const key = String.fromCharCode(e.which).toLowerCase();
+  //     if (e.ctrlKey || e.metaKey) {
+  //       switch (key) {
+  //         case "s":
+  //           e.preventDefault();
+  //           saveImage();
+  //           break;
+  //         case "z":
+  //           e.preventDefault();
+  //           pRef.current.undo();
+  //           break;
+  //         case "x":
+  //           e.preventDefault();
+  //           pRef.current.redo();
+  //           break;
+  //       }
+  //     } else {
+  //       switch (key) {
+  //         case "b":
+  //           e.preventDefault();
+  //           setTool("pen");
+  //           break;
+  //         case "e":
+  //           e.preventDefault();
+  //           setTool("eraser");
+  //           break;
+  //         case "t":
+  //           e.preventDefault();
+  //           setTool("text");
+  //           break;
+  //       }
+  //     }
+  //   };
+
+  //   document.addEventListener("keydown", handleKey);
+  //   return () => {
+  //     document.removeEventListener("keydown", handleKey);
+  //   };
+  // }, [pRef, currentImgIndex]);
+
   const handleBlur = (
     input: string,
     setFunc: (e: string) => void,
@@ -152,18 +195,55 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo }) => {
     };
 
     const handleEnter = (e: KeyboardEvent): void => {
-      if (e.key === "Enter" && popup) {
+      if (e.key === "Enter") {
         e.preventDefault();
         setPopup(false);
       }
     };
 
+    const handleKey = (e: KeyboardEvent): void => {
+      const key = String.fromCharCode(e.which).toLowerCase();
+      if (e.ctrlKey || e.metaKey) {
+        switch (key) {
+          // case "s":
+          //   e.preventDefault();
+          //   saveImage();
+          //   break;
+          case "z":
+            e.preventDefault();
+            pRef.current.undo();
+            break;
+          case "x":
+            e.preventDefault();
+            pRef.current.redo();
+            break;
+        }
+      } else {
+        switch (key) {
+          case "b":
+            e.preventDefault();
+            setActivePaintTool("pen");
+            break;
+          case "e":
+            e.preventDefault();
+            setActivePaintTool("eraser");
+            break;
+          case "t":
+            e.preventDefault();
+            setActivePaintTool("text");
+            break;
+        }
+      }
+    };
+
     document.addEventListener("mousedown", handleClose);
     document.addEventListener("contextmenu", handleClick);
+    document.addEventListener("keydown", handleKey);
     document.addEventListener("keydown", handleEnter);
     return () => {
       document.removeEventListener("mousedown", handleClose);
       document.removeEventListener("contextmenu", handleClick);
+      document.removeEventListener("keydown", handleKey);
       document.removeEventListener("keydown", handleEnter);
     };
   }, []);
@@ -247,6 +327,11 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo }) => {
           </div>
         </div>
         <hr />
+        <div className="">
+          <button onClick={() => removeMarker()}>
+            {/* <IoArrowUndo size={"2rem"} /> */}aaa
+          </button>
+        </div>
         {/* <div className="input-detail-wrapper">
           <div className="input-detail">
             <PiWaveSineBold size={"2rem"} />

@@ -1,21 +1,27 @@
 import fs from "fs";
 import path from "path";
+import { getVideoMeta } from "./ffmpeg";
 
-const getVideoList = (inputPath: string): Video[] => {
-  const videoPaths: Video[] = getVideoPaths(inputPath);
+const getVideoList = async (inputPath: string): Promise<Video[]> => {
+  const videoPaths = await getVideoPaths(inputPath);
   return videoPaths;
 };
 
-const getVideoPaths = (inputPath: string, maxDepth = 2, depth = 0): Video[] => {
+const getVideoPaths = async (
+  inputPath: string,
+  maxDepth = 2,
+  depth = 0
+): Promise<Video[]> => {
   let videos: Video[] = [];
-  const files = fs.readdirSync(inputPath);
+  const files = await fs.promises.readdir(inputPath);
 
-  files.forEach((file) => {
+  for (const file of files) {
     const fullPath = path.join(inputPath, file);
-    const stat = fs.statSync(fullPath);
+    const stat = await fs.promises.stat(fullPath);
 
     if (stat.isDirectory() && depth < maxDepth) {
-      videos = videos.concat(getVideoPaths(fullPath, maxDepth, depth + 1));
+      const subVideos = await getVideoPaths(fullPath, maxDepth, depth + 1);
+      videos = videos.concat(subVideos);
     } else if (
       stat.isFile() &&
       (file.endsWith(".mp4") || file.endsWith(".mov"))
@@ -24,11 +30,11 @@ const getVideoPaths = (inputPath: string, maxDepth = 2, depth = 0): Video[] => {
         name: file,
         path: fullPath,
         extension: path.parse(file).ext,
-        directory: fullPath.split("\\"),
+        directory: fullPath.split(path.sep),
         thumbnail: "",
       });
     }
-  });
+  }
 
   return videos;
 };
