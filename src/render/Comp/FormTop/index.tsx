@@ -20,19 +20,14 @@ const FormTop = () => {
 
   const [lastLoadTime, setLastLoadTime] = useState<number>(0);
 
-  const handleKeyDown = (e: any) => {
-    if (e.nativeEvent.isComposing || e.key !== "Enter") return;
-    enterPath(e.target.value);
-  };
+  useEffect(() => {
+    onUpdateVideoList(videoList);
+  }, [videoList]);
 
-  const enterPath = async (p: string) => {
+  const onUpdateVideoList = async (list: Video[]) => {
     try {
-      const res = await window.electron.getVideoList(p);
-      console.log(res);
-      if (isErr(res)) return;
-      setVideoList(res);
-      setFilteredVideoList(Filter(res, filter));
-      setFilter({ dateList: makeDateList(res) });
+      setFilteredVideoList(Filter(list, filter));
+      setFilter({ dateList: makeDateList(list) });
       setLastLoad(new Date().getTime());
     } catch (error) {
       console.error("Error:", error);
@@ -83,21 +78,22 @@ const FormTop = () => {
     <>
       <div className="form-top-wrapper">
         <div className="inputpath">
-          <input
+          {/* <input
             value={inputPath}
             onChange={(e) => {
               setInputPath(e.target.value);
               setFilteredVideoList(Filter(videoList, filter));
             }}
             onKeyDown={(e) => handleKeyDown(e)}
-          />
+          /> */}
+          {inputPath}
           <div className="inputpath-icon">
             <FaFolder size={"1.5rem"} />
           </div>
-          <button className="update" onClick={() => enterPath(inputPath)}>
+          {/* <button className="update" onClick={() => enterPath(inputPath)}>
             {lastLoadTime >= 1 && <TbReload size={"1.8rem"} />}
             {getLastUpdate()}
-          </button>
+          </button> */}
         </div>
 
         <div className="fil-wrapper">

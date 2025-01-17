@@ -1,20 +1,28 @@
 import { StrokeOptions } from "perfect-freehand";
 export interface IElectronAPI {
+  showFilePath: (e: File) => string;
+  updateMenu: (e: string) => void;
   getWindowSize: () => Promise<Electron.Rectangle>;
-  onWindowResize: (callback: (size: Electron.Rectangle) => void) => void;
+  onWindowResize: (callback: (size: Electron.Rectangle) => void) => () => void;
+  onCheckOpen: (
+    callback: (id: "openFile" | "openDirectory") => void
+  ) => () => void;
+  openFileFolder: (id: "openFile" | "openDirectory") => Promise<string>;
+  // onOpenFile: (callback: (path: string) => void) => () => void;
+  // onOpenFolder: (callback: (path: string) => void) => () => void;
   getVideoMeta: (e: string) => Promise<any | Err>;
   getVideoList: (e: string) => Promise<Video[] | Err>;
   getThumbnail: (e: string) => Promise<string | Err>;
   _getThumbnail: (e: string) => Promise<[string[], number] | Err>;
-  convert2HLS: (e: string[]) => Promise<Record<string, string | null> | Err>;
-  _convert2HLS: (e: string[]) => Promise<string[]>;
-  onSaveImages: (callback: () => void) => () => void;
+  onSaveImages: (callback: () => Promise<void>) => () => void;
+  onSaveAllImages: (callback: () => Promise<void>) => () => void;
   saveImagesSelectVideo: (a: string, b: PaintData[]) => Promise<any>;
   getCaputureData: (
     a: string,
     b: PaintData[]
   ) => Promise<{ [key: number]: string }>;
-  saveCompositeImages: (a: string, b: { [x: number]: string }) => void;
+  saveCompositeImages: (a: MarkersRender) => void;
+  MOV2MP4: (e: Path) => Promise<Path>;
 }
 
 type Weaken<T, K extends keyof T> = {
@@ -26,6 +34,12 @@ declare global {
     electron: IElectronAPI;
   }
 
+  type Path = string;
+  type Base64 = string;
+  type Frame = number;
+  type Time = number;
+  type FPS = number;
+
   interface Size {
     w: number;
     h: number;
@@ -36,7 +50,7 @@ declare global {
     path: string;
     extension: string;
     directory: string[];
-    thumbnail: string;
+    // thumbnail: string;
   }
 
   interface Filter {
@@ -88,13 +102,21 @@ declare global {
     position?: string | null;
   }
 
-  type Marker = Record<number, [PaintElement[][], number, Size]>;
-  type Markers = Record<string, Marker>;
+  type Marker = Record<Frame, [PaintElement[][], number, Size]>;
+  type Markers = Record<Path, Marker>;
+
+  type MarkerRender = Record<Frame, Base64>;
+  type MarkersRender = Record<Path, MarkerRender>;
 
   interface PaintData {
     frame: number;
     sec: number;
     paint: HTMLCanvasElement;
+  }
+
+  interface VideoTag {
+    date: string | null;
+    check: string | null;
   }
 
   interface Succ {

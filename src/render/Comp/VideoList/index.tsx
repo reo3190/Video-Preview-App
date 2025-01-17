@@ -7,8 +7,7 @@ import CahcheVideo from "./cache";
 const videoPath = "U:\\01_check\\02_3dLO_ch\\241216\\SOS_c036_lo_t1.mp4";
 
 const VideoList = () => {
-  const { filteredVideoList, curPage, setCurPage, videoCache } =
-    useDataContext();
+  const { filteredVideoList, curPage, setCurPage } = useDataContext();
   const itemsPerPage = 20;
   const startIndex = curPage * itemsPerPage;
   const currentItems = filteredVideoList.slice(
@@ -73,9 +72,6 @@ const VideoList = () => {
         {currentItems.map((e) => {
           return <CahcheVideo key={e.path} video={e} />;
         })}
-        {/* {currentPaths.map((e) => {
-          return <CahcheVideo key={e} filePath={e || ""} />;
-        })} */}
       </div>
     </>
   );

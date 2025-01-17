@@ -31,7 +31,7 @@ const getVideoPaths = async (
         path: fullPath,
         extension: path.parse(file).ext,
         directory: fullPath.split(path.sep),
-        thumbnail: "",
+        // thumbnail: "",
       });
     }
   }

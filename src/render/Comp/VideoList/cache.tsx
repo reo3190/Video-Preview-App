@@ -1,18 +1,17 @@
 import React, { useRef, useEffect, useState, FC } from "react";
 import { useDataContext } from "../../../hook/UpdateContext";
 import { useNavigate } from "react-router-dom";
-// import VideoSeeker from "./seek";
 import { IoReturnDownForwardSharp } from "react-icons/io5";
-import { isErr } from "../../../hook/api";
+import VideoInfo from "./videoInfo";
+import { isErr, mov2mp4 } from "../../../hook/api";
 
 interface Props {
   video: Video;
-  // filePath: string;
 }
 
 const CahcheVideo: FC<Props> = ({ video }) => {
-  const [videoURL, setVideoURL] = useState<string | null>(null);
-  const { setCurVideo, editVideoCache, editImgCache } = useDataContext();
+  const { setCurVideo, editImgCache, editVideoMetaCache, editMovPathCache } =
+    useDataContext();
 
   const [img, setImg] = useState<string | null>(
     editImgCache("get", video.path)
@@ -39,42 +38,28 @@ const CahcheVideo: FC<Props> = ({ video }) => {
 
   const navigate = useNavigate();
   const handlePlay = async (video: Video) => {
-    const res = await window.electron.getVideoMeta(video.path);
-    navigate("/play", { state: { res } });
+    const path = video.path;
+    const cache = editVideoMetaCache("get", path);
+    if (!cache) {
+      const res = await window.electron.getVideoMeta(path);
+      const size: Size = { w: res.streams[0].width, h: res.streams[0].height };
+      const str = res.streams[0].r_frame_rate;
+      const parts = str.split("/");
+      const fps: FPS =
+        parts.length === 2 ? Number(parts[0]) / Number(parts[1]) : NaN;
+      editVideoMetaCache("add", path, [size, fps]);
+
+      console.log([size, fps]);
+    }
+
+    const movPath = await mov2mp4(video);
+    if (movPath) {
+      editMovPathCache("add", video.path, movPath);
+    }
+
+    navigate("/play");
     setCurVideo(video);
   };
-
-  // useEffect(() => {
-  //   const loadVideo = async () => {
-  //     const hls = await window.electron.convert2HLS(filePath);
-  //     if (isErr(hls)) return;
-  //     console.log(hls);
-  //     // const cachedBlob = editVideoCache("get", filePath);
-
-  //     // if (cachedBlob) {
-  //     //   console.log(`Loading video from cache: ${filePath}`);
-  //     //   const url = URL.createObjectURL(cachedBlob);
-  //     //   setVideoURL(url);
-  //     //   console.log("loaded");
-  //     // } else {
-  //     console.log(`Loading video from file: ${filePath}`);
-  //     // const response = await fetch(`file://${filePath}`);
-  //     // const blob = await response.blob();
-  //     console.log("loaded");
-
-  //     // editVideoCache("add", filePath, blob);
-
-  //     // const url = URL.createObjectURL(blob);
-  //     setVideoURL(hls[filePath]);
-  //     // }
-  //   };
-
-  //   loadVideo();
-
-  //   return () => {
-  //     if (videoURL) URL.revokeObjectURL(videoURL);
-  //   };
-  // }, [filePath]);
 
   return (
     <>
@@ -87,13 +72,13 @@ const CahcheVideo: FC<Props> = ({ video }) => {
         }}
       >
         {Loading && <div className="placeholder">Loading...</div>}
+        <VideoInfo video={video} />
         <img
           className={`frame-image ${Loading ? "loading" : "loaded"}`}
           src={"data:image/png;base64," + img}
           onLoad={handleImageLoad}
           onClick={() => handlePlay(video)}
         />
-        {/* <VideoSeeker path={filePath} src={filePath} /> */}
       </div>
     </>
   );

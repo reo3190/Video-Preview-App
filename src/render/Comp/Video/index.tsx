@@ -1,4 +1,11 @@
-import React, { useEffect, useRef, forwardRef, Ref, RefObject } from "react";
+import React, {
+  useEffect,
+  useRef,
+  forwardRef,
+  Ref,
+  RefObject,
+  useState,
+} from "react";
 import "video.js/dist/video-js.css";
 import VideoPlayer from "./VideoPlayer";
 import Videojs from "./VideoPlayer";
@@ -9,17 +16,18 @@ type VideoUIProps = {
   size?: number;
   onSeek: (frame: number) => void;
   markers: Marker;
+  fps: number;
   onTimeUpdate?: (time: number) => void;
   onPlay?: () => void;
   onPause?: () => void;
 };
 
 const Video = forwardRef<any, VideoUIProps>(
-  ({ path, onSeek, onTimeUpdate, onPlay, onPause, size, markers }, ref) => {
+  ({ path, onSeek, onTimeUpdate, onPlay, onPause, markers, fps }, ref) => {
     // const { currentTime, setCurrentTime } = useDataContext();
     const currentTime = 10;
     const setCurrentTime = () => {};
-    const videoJsOptions = {
+    const baseOptions = {
       controls: true,
       controlBar: {
         children: {
@@ -42,15 +50,15 @@ const Video = forwardRef<any, VideoUIProps>(
       inactivityTimeout: 0,
       sources: [
         {
+          // src: "",
           src: `file://${path}`,
-          // src: path,
-          // type: "application/x-mpegURL",
           type: "video/mp4",
         },
       ],
-      width: size ?? 100,
+      // width: size ?? 100,
       loop: true,
     };
+    const [videoJsOptions, setVideoJsOptions] = useState(baseOptions);
 
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const isKeyPressed = useRef(false);
@@ -137,6 +145,18 @@ const Video = forwardRef<any, VideoUIProps>(
       };
     }, [ref, markers]);
 
+    // useEffect(() => {
+    //   setVideoJsOptions((pre) => ({
+    //     ...pre,
+    //     sources: [
+    //       {
+    //         src: `file://${path}`,
+    //         type: "video/mp4",
+    //       },
+    //     ],
+    //   }));
+    // }, [path]);
+
     return (
       <>
         <VideoPlayer
@@ -149,6 +169,7 @@ const Video = forwardRef<any, VideoUIProps>(
           setCurrentTime={setCurrentTime}
           onSeek={onSeek}
           markers={markers}
+          fps={fps}
         />
       </>
     );

@@ -11,14 +11,10 @@ import videojs from "video.js";
 // import * as Popcorn from 'popcorn';
 import { VideoFrame } from "./VideoFrame";
 import Player from "video.js/dist/types/player";
-import { num2date } from "../../../hook/api";
+import { num2date, frame2time, time2frame, round } from "../../../hook/api";
 import { useDataContext } from "../../../hook/UpdateContext";
 
-const fps = 24;
-const round = (n: number): number => {
-  const _n = Math.round(n * 1000);
-  return _n / 1000;
-};
+// const fps = 24;
 
 interface VideoPlayerProps {
   currentTime: number;
@@ -29,6 +25,7 @@ interface VideoPlayerProps {
   options?: any;
   onSeek: (frame: number) => void;
   markers: Marker;
+  fps: number;
 }
 
 // 公開するメソッドの型
@@ -51,6 +48,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       options,
       onSeek,
       markers,
+      fps,
     },
     ref
   ) => {
@@ -76,67 +74,87 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         videoElement.classList.add("vjs-big-play-centered");
         videoElement.setAttribute("id", "video");
         videoRef.current.appendChild(videoElement);
-        const player = (playerRef.current = videojs(videoElement, options));
 
-        player.on("seeking", () => {
-          if (onTimeUpdate) {
-            // onTimeUpdate(player.currentTime());
-          } else {
-            // setCurrentTime(player.currentTime());
-          }
-        });
-
-        player.on("play", () => {
-          setIsPlaying(true);
-          if (onPlay) {
-            onPlay();
-          }
-        });
-
-        player.on("pause", () => {
-          setIsPlaying(false);
-          if (onPause) {
-            onPause();
-          }
-          // setCurrentTime(player.currentTime());
-        });
-
-        // player.on("timeupdate", () => {
-        //   // onSeek(frameRef.current);
-        // });
-
-        const videoFrame = new VideoFrame({
-          id: "video_html5_api",
-          frameRate: fps,
-          callback: (frame: number) => {
-            frameRef.current = frame;
-            setFrame(frame);
-            setSlider(frame);
-            onSeek(frameRef.current);
-          },
-        });
-
-        player.on("loadedmetadata", () => {
-          if (!playerRef.current || !videoRef.current) return;
-          const total = playerRef.current.duration();
-          const p = getProgressBarElement();
-          if (!p) return;
-
-          for (var i = 0; i < markerFrames.length; i++) {
-            makeMarkerElement(p, markerFrames[i]);
-          }
-
-          const el = document.createElement("div");
-          el.className = "vjs-marker-frame";
-          const _total_float = (playerRef.current.duration() || 1) * fps;
-          const _total =
-            Math.round((playerRef.current.duration() || 1) * fps) + 1;
-          const wid = (1 / _total_float) * 100;
-          el.style.width = wid + "%";
-          p.append(el);
-        });
+        __init__(videoElement);
       }
-    }, [options, videoRef]);
+    }, [videoRef]);
+
+    useEffect(() => {
+      if (playerRef.current) {
+        playerRef.current.dispose(); // 既存のプレイヤーを破棄
+        playerRef.current = null; // 参照をクリア
+      }
+
+      if (videoRef.current) {
+        const videoElement = document.createElement("video-js");
+        videoElement.classList.add("vjs-big-play-centered");
+        videoElement.setAttribute("id", "video");
+        videoRef.current.innerHTML = ""; // コンテナをクリア
+        videoRef.current.appendChild(videoElement);
+
+        __init__(videoElement); // 新しいビデオプレイヤーを初期化
+      }
+    }, [options, curVideo?.path]);
+
+    const __init__ = (videoElement: HTMLElement) => {
+      const player = (playerRef.current = videojs(videoElement, options));
+
+      player.on("seeking", () => {
+        if (onTimeUpdate) {
+          // onTimeUpdate(player.currentTime());
+        } else {
+          // setCurrentTime(player.currentTime());
+        }
+      });
+
+      player.on("play", () => {
+        setIsPlaying(true);
+        if (onPlay) {
+          onPlay();
+        }
+      });
+
+      player.on("pause", () => {
+        setIsPlaying(false);
+        if (onPause) {
+          onPause();
+        }
+        // setCurrentTime(player.currentTime());
+      });
+
+      // player.on("timeupdate", () => {
+      //   // onSeek(frameRef.current);
+      // });
+
+      const videoFrame = new VideoFrame({
+        id: "video_html5_api",
+        frameRate: fps,
+        callback: (frame: number) => {
+          frameRef.current = frame;
+          setFrame(frame);
+          setSlider(frame);
+          onSeek(frameRef.current);
+        },
+      });
+
+      player.on("loadedmetadata", () => {
+        if (!playerRef.current || !videoRef.current) return;
+        const total = playerRef.current.duration();
+        const p = getProgressBarElement();
+        if (!p) return;
+
+        for (var i = 0; i < markerFrames.length; i++) {
+          makeMarkerElement(p, markerFrames[i]);
+        }
+
+        const el = document.createElement("div");
+        el.className = "vjs-marker-frame";
+        const _total_float = (total || 1) * fps;
+        const wid = (1 / _total_float) * 100;
+        el.style.width = wid + "%";
+        p.append(el);
+      });
+    };
 
     useEffect(() => {
       return () => {
@@ -153,9 +171,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
         if (duration !== undefined && currentTime !== undefined) {
           const seekTime = round(
-            Math.min(duration, round(currentTime) + 1.0 / fps)
+            Math.min(duration, currentTime + frame2time(1, fps))
           );
-          console.log(seekTime);
           playerRef.current.currentTime(seekTime);
         }
       }
@@ -167,7 +184,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         const currentTime = playerRef.current.currentTime();
 
         if (duration !== undefined && currentTime !== undefined) {
-          const seekTime = round(Math.max(0, round(currentTime) - 1.0 / fps));
+          const seekTime = round(
+            Math.max(0, round(currentTime) - frame2time(1, fps))
+          );
           playerRef.current.currentTime(seekTime);
         }
       }
@@ -198,9 +217,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     };
 
     const setCurrentFrame = (frame: number): void => {
-      const halfFrame = 1 / fps / 2;
-      const time = round(frame / fps - halfFrame);
-      console.log(time);
+      const halfFrameTime = frame2time(1, fps) / 2;
+      const time = round(frame2time(frame, fps) - halfFrameTime);
       playerRef.current?.currentTime(time);
     };
 
@@ -223,8 +241,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
     const makeMarkerElement = (p: Element, frame: number) => {
       if (!playerRef.current) return null;
-      const total_float = (playerRef.current.duration() || 1) * fps;
-      const total = Math.ceil((playerRef.current.duration() || 1) * fps) + 1;
+      const totalTime = playerRef.current.duration() || 1;
+      const total_float = totalTime * fps;
       const left = (frame / total_float) * 100;
       const el = document.createElement("div");
       el.className = "vjs-marker";
@@ -253,17 +271,21 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (!playerRef.current) return null;
       const p = getSliderBarElement() as HTMLElement | null;
       if (!p) return;
-      const total_float = (playerRef.current.duration() || 1) * fps;
-
-      const total = Math.ceil((playerRef.current.duration() || 1) * fps) + 1;
+      const totalTime = playerRef.current.duration() || 1;
+      const total_float = totalTime * fps;
       const left = (f / total_float) * 100;
       const wid = (1 / total_float) * 100;
       p.style.left = left - wid + "%";
-      // p.style.width = wid + "%";
     };
 
     const getSliderBarElement = (): Element | null => {
       return videoRef.current?.querySelector(".vjs-marker-frame") || null;
+    };
+
+    const setPath = (path: string) => {
+      if (playerRef.current) {
+        playerRef.current.src({ src: path, type: "video/mp4" });
+      }
     };
 
     // 親コンポーネントに公開するメソッド
@@ -285,6 +307,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       setWidth: (w: number) => setWidth(w),
       addMarker: (time: number) => addMarker(time),
       removeMarker: (f: number) => removeMarker(f),
+      setPath: (p: string) => setPath(p),
     }));
 
     return (

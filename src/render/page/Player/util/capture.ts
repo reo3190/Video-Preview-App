@@ -1,4 +1,4 @@
-import { drawElement } from "../../Comp/Canvas/utils/elementUtils";
+import { drawElement } from "../../../Comp/Canvas/utils/elementUtils";
 
 export const CaptureDraw = (
   size: Size,

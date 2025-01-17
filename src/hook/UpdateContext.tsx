@@ -8,7 +8,7 @@ import {
 import { Filter } from "./api";
 // ---------------------------------------------------------
 
-export type VideoCacheMode = "add" | "get" | "remove" | "clear";
+export type CacheMode = "add" | "get" | "remove" | "clear";
 
 interface DataContext {
   windowSize: Electron.Rectangle;
@@ -27,18 +27,14 @@ interface DataContext {
   setCurVideo: (e: Video) => void;
   lastLoad: number;
   setLastLoad: (e: number) => void;
-  videoCache: Map<string, Blob>;
-  editVideoCache: (
-    mode: VideoCacheMode,
-    key: string,
-    value?: Blob
-  ) => Blob | null;
   imgCache: Map<string, string>;
-  editImgCache: (
-    mode: VideoCacheMode,
+  editImgCache: (mode: CacheMode, key: string, value?: string) => string | null;
+  videoMetaCache: Map<string, [Size, FPS]>;
+  editVideoMetaCache: (
+    mode: CacheMode,
     key: string,
-    value?: string
-  ) => string | null;
+    value?: [Size, FPS]
+  ) => [Size, FPS] | null;
   paintTool: PaintTool;
   setPaintTool: (tool: PaintToolName, update: Partial<PaintToolConfig>) => void;
   activePaintTool: PaintToolName;
@@ -47,12 +43,20 @@ interface DataContext {
   setPaintConfig: (update: Partial<PaintConfig>) => void;
   videoMarkers: Markers;
   setVideoMarkers: (path: string, marker: Marker) => void;
+  __initVideoMarkers__: () => void;
+  movPathCache: Map<string, string>;
+  editMovPathCache: (
+    mode: CacheMode,
+    key: string,
+    value?: string
+  ) => string | null;
 }
 
 const defaultContext: DataContext = {
   windowSize: { x: 0, y: 0, width: 0, height: 0 },
   setWindowSize: () => {},
   inputPath: "L:\\02_check\\02_cut\\mk_F",
+  // inputPath: "",
   setInputPath: () => {},
   filter: {
     date: "all",
@@ -73,10 +77,10 @@ const defaultContext: DataContext = {
   setCurVideo: () => {},
   lastLoad: 0,
   setLastLoad: () => {},
-  videoCache: new Map<string, Blob>(),
-  editVideoCache: () => null,
   imgCache: new Map<string, string>(),
   editImgCache: () => null,
+  videoMetaCache: new Map<string, [Size, FPS]>(),
+  editVideoMetaCache: () => null,
   paintTool: {
     pen: { size: 10, color: "#000000", opacity: 1 },
     eraser: { size: 10, color: "", opacity: 1 },
@@ -90,6 +94,9 @@ const defaultContext: DataContext = {
   setPaintConfig: () => {},
   videoMarkers: {},
   setVideoMarkers: () => {},
+  __initVideoMarkers__: () => {},
+  movPathCache: new Map<string, string>(),
+  editMovPathCache: () => null,
 };
 
 const datactx = createContext<DataContext>(defaultContext);
@@ -111,8 +118,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     defaultContext.curVideo
   );
   const [lastLoad, setLastLoad] = useState<number>(defaultContext.lastLoad);
-  const videoCache = useState<Map<string, Blob>>(new Map())[0];
   const imgCache = useState<Map<string, string>>(new Map())[0];
+  const videoMetaCache = useState<Map<string, [Size, FPS]>>(new Map())[0];
   const [paintTool, setPaintTool] = useState<PaintTool>(
     defaultContext.paintTool
   );
@@ -125,6 +132,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [videoMarkers, setVideoMarkers] = useState<Record<string, Marker>>(
     defaultContext.videoMarkers
   );
+  const movPathCache = useState<Map<string, string>>(new Map())[0];
 
   const updateWindowSize = useCallback((size: Electron.Rectangle): void => {
     setWindowSize(size);
@@ -161,28 +169,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setLastLoad(e);
   }, []);
 
-  const editVideoCache = useCallback(
-    (mode: VideoCacheMode, key: string, value?: Blob): Blob | null => {
-      switch (mode) {
-        case "add":
-          if (!value) return null;
-          videoCache.set(key, value);
-          return null;
-        case "get":
-          return videoCache.get(key) || null;
-        case "remove":
-          videoCache.delete(key);
-          return null;
-        case "clear":
-          videoCache.clear();
-          return null;
-      }
-    },
-    [videoCache]
-  );
-
   const editImgCache = useCallback(
-    (mode: VideoCacheMode, key: string, value?: string): string | null => {
+    (mode: CacheMode, key: string, value?: string): string | null => {
       switch (mode) {
         case "add":
           if (!value) return null;
@@ -198,7 +186,27 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
           return null;
       }
     },
-    [videoCache]
+    [imgCache]
+  );
+
+  const editVideoMetaCache = useCallback(
+    (mode: CacheMode, key: string, value?: [Size, FPS]): [Size, FPS] | null => {
+      switch (mode) {
+        case "add":
+          if (!value) return null;
+          videoMetaCache.set(key, value);
+          return null;
+        case "get":
+          return videoMetaCache.get(key) || null;
+        case "remove":
+          videoMetaCache.delete(key);
+          return null;
+        case "clear":
+          videoMetaCache.clear();
+          return null;
+      }
+    },
+    [videoMetaCache]
   );
 
   const updatePaintTool = useCallback(
@@ -229,6 +237,31 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setVideoMarkers((pre) => ({ ...pre, [path]: marker }));
   }, []);
 
+  const __initVideoMarkers__ = useCallback(() => {
+    setVideoMarkers({});
+    // alert("これは警告メッセージです！");
+  }, []);
+
+  const editMovPathCache = useCallback(
+    (mode: CacheMode, key: string, value?: string): string | null => {
+      switch (mode) {
+        case "add":
+          if (!value) return null;
+          movPathCache.set(key, value);
+          return null;
+        case "get":
+          return movPathCache.get(key) || null;
+        case "remove":
+          movPathCache.delete(key);
+          return null;
+        case "clear":
+          movPathCache.clear();
+          return null;
+      }
+    },
+    [movPathCache]
+  );
+
   return (
     <datactx.Provider
       value={{
@@ -248,10 +281,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setCurVideo: updateCurVideo,
         lastLoad,
         setLastLoad: updateLastLoad,
-        videoCache,
-        editVideoCache,
         imgCache,
         editImgCache,
+        videoMetaCache,
+        editVideoMetaCache,
         paintTool,
         setPaintTool: updatePaintTool,
         activePaintTool,
@@ -260,6 +293,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setPaintConfig: updatePaintConfig,
         videoMarkers,
         setVideoMarkers: updateVideoMarkers,
+        __initVideoMarkers__,
+        movPathCache,
+        editMovPathCache,
       }}
     >
       {children}
