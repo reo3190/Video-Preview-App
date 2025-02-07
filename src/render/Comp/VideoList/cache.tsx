@@ -3,24 +3,34 @@ import { useDataContext } from "../../../hook/UpdateContext";
 import { useNavigate } from "react-router-dom";
 import { IoReturnDownForwardSharp } from "react-icons/io5";
 import VideoInfo from "./videoInfo";
-import { isErr, mov2mp4 } from "../../../hook/api";
+import { isErr, loadFile } from "../../../hook/api";
+import { PiPencilSimpleLine } from "react-icons/pi";
 
 interface Props {
   video: Video;
 }
 
 const CahcheVideo: FC<Props> = ({ video }) => {
-  const { setCurVideo, editImgCache, editVideoMetaCache, editMovPathCache } =
-    useDataContext();
+  const {
+    setLoad,
+    setCurVideo,
+    editImgCache,
+    editVideoMetaCache,
+    editMovPathCache,
+    videoMarkers,
+  } = useDataContext();
+
+  const marker = videoMarkers[video.path] || {};
+  const markerCount = Object.keys(marker).length;
 
   const [img, setImg] = useState<string | null>(
     editImgCache("get", video.path)
   );
-  const [Loading, setLoading] = useState<boolean>(!img);
+  const [LoadingIMG, setLoadingIMG] = useState<boolean>(!img);
 
   useEffect(() => {
     const getImg = async () => {
-      if (Loading) {
+      if (LoadingIMG) {
         const res = await window.electron.getThumbnail(video.path);
         if (isErr(res)) return;
 
@@ -33,48 +43,30 @@ const CahcheVideo: FC<Props> = ({ video }) => {
   }, []);
 
   const handleImageLoad = () => {
-    setLoading(false);
+    setLoadingIMG(false);
   };
 
   const navigate = useNavigate();
   const handlePlay = async (video: Video) => {
-    const path = video.path;
-    const cache = editVideoMetaCache("get", path);
-    if (!cache) {
-      const res = await window.electron.getVideoMeta(path);
-      const size: Size = { w: res.streams[0].width, h: res.streams[0].height };
-      const str = res.streams[0].r_frame_rate;
-      const parts = str.split("/");
-      const fps: FPS =
-        parts.length === 2 ? Number(parts[0]) / Number(parts[1]) : NaN;
-      editVideoMetaCache("add", path, [size, fps]);
-
-      console.log([size, fps]);
-    }
-
-    const movPath = await mov2mp4(video);
-    if (movPath) {
-      editMovPathCache("add", video.path, movPath);
-    }
-
-    navigate("/play");
+    setLoad(true);
+    await loadFile(editVideoMetaCache, editMovPathCache, video);
     setCurVideo(video);
+    navigate("/play");
   };
 
   return (
     <>
-      <div
-        style={{
-          width: "250px",
-          height: "140px",
-          position: "relative",
-          background: "#fff",
-        }}
-      >
-        {Loading && <div className="placeholder">Loading...</div>}
+      <div className="video-list-item">
+        {LoadingIMG && <div className="placeholder">Loading...</div>}
         <VideoInfo video={video} />
+        {markerCount > 0 && (
+          <div className="marker-count">
+            <PiPencilSimpleLine size={"2.5rem"} />
+          </div>
+        )}
+
         <img
-          className={`frame-image ${Loading ? "loading" : "loaded"}`}
+          className={`frame-image ${LoadingIMG ? "loading" : "loaded"}`}
           src={"data:image/png;base64," + img}
           onLoad={handleImageLoad}
           onClick={() => handlePlay(video)}

@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { getVideoMeta } from "./ffmpeg";
 
 const getVideoList = async (inputPath: string): Promise<Video[]> => {
   const videoPaths = await getVideoPaths(inputPath);
@@ -31,7 +30,6 @@ const getVideoPaths = async (
         path: fullPath,
         extension: path.parse(file).ext,
         directory: fullPath.split(path.sep),
-        // thumbnail: "",
       });
     }
   }

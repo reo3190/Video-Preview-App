@@ -1,42 +1,35 @@
 .form-top-wrapper {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
 
   font-size: 1.2rem;
 
+  width: 100vw;
+  height: 50px;
+
   .inputpath {
-    position: relative;
+    grid-column: 1 / 2;
     // width: 300px;
     display: flex;
     flex-direction: row;
+    align-items: center;
+
+    margin-left: 2vw;
 
     gap: 5px;
 
-    input {
+    .inputpath-str {
       width: 300px;
-      height: 3rem;
+      // height: 3rem;
       font-style: italic;
-      background: var(--bg-sub-color);
-      border-radius: 5px;
-      position: relative;
+      // background: var(--bg-color);
 
-      // padding: 0 10px 0 10px ;
-
-      text-align: center;
-
-      border: none;
       color: var(--tx-color);
-
-      &:focus {
-        outline: none;
-      }
     }
 
     .inputpath-icon {
-      position: absolute;
-      top: 5px;
-      left: 5px;
+      width: 20px;
     }
 
     .update {
@@ -59,12 +52,13 @@
   }
 
   .fil-wrapper {
+    grid-column: 2 / 3;
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 100vw;
-    margin-top: 20px;
-    gap: 20px;
+    justify-content: flex-end;
+    // width: 100vw;
+    margin-right: 2vw;
+    gap: 1vw;
 
     div {
       display: flex;
@@ -79,20 +73,13 @@
         width: 120px;
         height: 2rem;
         padding-left: 5px;
+        border-radius: 2px;
 
         &:focus {
           outline: none;
         }
       }
     }
-  }
-
-  .fil-search-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100vw;
-    margin-top: 10px;
 
     .fil-search {
       position: relative;
@@ -100,10 +87,10 @@
 
       input {
         width: 100%;
-        height: 3rem;
+        height: 2rem;
         font-style: italic;
         background: var(--bg-sub-color);
-        border-radius: 5px;
+        border-radius: 2px;
         position: relative;
 
         // padding: 0 10px 0 10px ;
@@ -120,7 +107,7 @@
 
       .fil-search-icon {
         position: absolute;
-        top: 5px;
+        top: 3px;
         right: 5px;
       }
     }

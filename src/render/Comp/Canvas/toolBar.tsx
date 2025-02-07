@@ -11,7 +11,8 @@ import {
   IoEllipseOutline,
   IoEllipse,
 } from "react-icons/io5";
-import { MdOpacity } from "react-icons/md";
+import { LuMousePointer2 } from "react-icons/lu";
+import { MdOpacity, MdDelete } from "react-icons/md";
 import { VscTextSize } from "react-icons/vsc";
 import { LuCircleDot } from "react-icons/lu";
 import { useDataContext } from "../../../hook/UpdateContext";
@@ -20,10 +21,17 @@ interface Props {
   pRef: any;
   canUndo: boolean;
   canRedo: boolean;
+  canDelete: boolean;
   removeMarker: () => void;
 }
 
-const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
+const ToolBar: FC<Props> = ({
+  pRef,
+  canUndo,
+  canRedo,
+  canDelete,
+  removeMarker,
+}) => {
   const {
     paintTool,
     setPaintTool,
@@ -51,6 +59,12 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
   const [opacityInput, setOpacityInput] = useState<string>(
     String(paintTool[activePaintTool].opacity * 100)
   );
+
+  useEffect(() => {
+    setSizeInput(String(paintTool[activePaintTool].size));
+    setColorInput(String(paintTool[activePaintTool].color));
+    setOpacityInput(String(paintTool[activePaintTool].opacity * 100));
+  }, [activePaintTool]);
 
   const setSize = (input: string): void => {
     const num = Number(input);
@@ -181,6 +195,7 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
   useEffect(() => {
     const handleClick = (e: MouseEvent): void => {
       e.preventDefault();
+      if (activePaintTool === "mouse") return;
       setPopup(true);
       setPopupPos({ x: e.clientX, y: e.clientY });
     };
@@ -195,13 +210,24 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
     };
 
     const handleEnter = (e: KeyboardEvent): void => {
-      if (e.key === "Enter") {
+      if (e.key === "Enter" && popup) {
         e.preventDefault();
         setPopup(false);
       }
     };
 
     const handleKey = (e: KeyboardEvent): void => {
+      const activeElement = document.activeElement;
+
+      // フォーカスされている要素が input や textarea なら処理をスキップ
+      if (
+        activeElement instanceof HTMLInputElement ||
+        activeElement instanceof HTMLTextAreaElement ||
+        activeElement?.getAttribute("contenteditable") === "true"
+      ) {
+        return;
+      }
+
       const key = String.fromCharCode(e.which).toLowerCase();
       if (e.ctrlKey || e.metaKey) {
         switch (key) {
@@ -232,6 +258,9 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
             e.preventDefault();
             setActivePaintTool("text");
             break;
+          case "m":
+            e.preventDefault();
+            setActivePaintTool("mouse");
         }
       }
     };
@@ -246,11 +275,23 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
       document.removeEventListener("keydown", handleKey);
       document.removeEventListener("keydown", handleEnter);
     };
-  }, []);
+  }, [activePaintTool, pRef, popup]);
 
   return (
     <>
       <div className="tool-bar-inner">
+        <input
+          type="radio"
+          id="mouse"
+          checked={activePaintTool === "mouse"}
+          onChange={() => setActivePaintTool("mouse")}
+        />
+        <label
+          className={`tool ${activePaintTool === "mouse" ? "active" : null}`}
+          htmlFor="mouse"
+        >
+          <LuMousePointer2 size={"2.5rem"} />
+        </label>
         <input
           type="radio"
           id="pen"
@@ -288,7 +329,7 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
           <PiTextT size={"2.5rem"} />
         </label>
         <hr />
-        <div className="input-detail-wrapper">
+        <div className={`input-detail-wrapper ${activePaintTool}`}>
           <div className="input-detail">
             {activePaintTool === "text" ? (
               <VscTextSize size={"2rem"} />
@@ -300,7 +341,9 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
             <input
               type="text"
               value={sizeInput}
-              onChange={(e) => setSize(e.target.value)}
+              onChange={(e) =>
+                setSize(String(Math.floor(Number(e.target.value))))
+              }
               onBlur={(e) => handleBlur(e.target.value, setSize, "10")}
             />
           </div>
@@ -317,7 +360,9 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
             <input
               type="text"
               value={opacityInput}
-              onChange={(e) => setOpacity(e.target.value)}
+              onChange={(e) =>
+                setOpacity(String(Math.floor(Number(e.target.value))))
+              }
               onBlur={(e) => {
                 handleBlur(e.target.value, setOpacity, "100");
               }}
@@ -327,9 +372,9 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
           </div>
         </div>
         <hr />
-        <div className="">
-          <button onClick={() => removeMarker()}>
-            {/* <IoArrowUndo size={"2rem"} /> */}aaa
+        <div className="delete-marker">
+          <button onClick={() => removeMarker()} disabled={!canDelete}>
+            <MdDelete size={"2rem"} />
           </button>
         </div>
         {/* <div className="input-detail-wrapper">
@@ -389,7 +434,7 @@ const ToolBar: FC<Props> = ({ pRef, canUndo, canRedo, removeMarker }) => {
                 const num = Number(e.target.value);
                 if (!num) return;
                 const value = num > 50 ? 50 + (num - 50) * 10 : num;
-                setSize(String(value));
+                setSize(String(Math.floor(Number(value))));
               }}
               min="0"
               max="80"

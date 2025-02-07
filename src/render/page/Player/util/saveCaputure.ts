@@ -7,6 +7,7 @@ const handleSaveImages = async (
   size: Size,
   fps: number
 ): Promise<MarkersRender> => {
+  if (!markers) return {};
   const frames = Object.keys(markers || {}).map(Number);
 
   const saveData = frames.map((e) => {

@@ -20,7 +20,6 @@ const VideoInfo: FC<Props> = ({ video }) => {
         </div>
         <div className="video-info">
           <div>{num2date(tag.date || "")}</div>
-          <div>{markerCount}</div>
         </div>
       </div>
     </>

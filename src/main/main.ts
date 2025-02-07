@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
-import { BrowserWindow, app, ipcMain, Menu, dialog } from "electron";
-import { exec, spawn } from "child_process";
+import { BrowserWindow, app, ipcMain, Menu, dialog, shell } from "electron";
+import { autoUpdater } from "electron-updater";
 import {
   getVideoMeta,
   getVideoDuration,
@@ -12,7 +12,8 @@ import {
 } from "./utils/ffmpeg";
 import { isErr } from "../hook/api";
 import { getVideoList } from "./utils/video";
-import * as crypto from "crypto";
+import os from "os";
+const temp = fs.mkdtempSync(os.tmpdir() + "/_video-preview-app-");
 
 //  /$$   /$$  /$$$$$$  /$$$$$$$$ /$$   /$$
 // | $$$ /$$$ /$$__  $$|__  $$__/| $$$ | $$
@@ -23,17 +24,29 @@ import * as crypto from "crypto";
 // | $$  | $$| $$  | $$ /$$$$$$$$| $$ \  $$
 // \__/  \__/\__/  \__/ \_______/\__/  \__/
 
-app.whenReady().then(() => {
+autoUpdater.autoInstallOnAppQuit = false;
+
+const isDebug =
+  process.env.NODE_ENV === "development" || process.env.DEBUG_PROD === "true";
+
+app.whenReady().then(async () => {
   // アプリの起動イベント発火で BrowserWindow インスタンスを作成
   const mainWindow = new BrowserWindow({
+    width: 1200,
+    minWidth: 1000,
     webPreferences: {
-      // webpack が出力したプリロードスクリプトを読み込み
       preload: path.join(__dirname, "preload.js"),
+      // webpack が出力したプリロードスクリプトを読み込み
+      // preload: app.isPackaged
+      //   ? path.join(__dirname, "preload.js")
+      //   : path.join(__dirname, "../../.erb/dll/preload.js"),
     },
   });
   mainWindow.setAspectRatio(1.5);
 
-  mainWindow.webContents.openDevTools({ mode: "detach" });
+  if (isDebug) {
+    mainWindow.webContents.openDevTools({ mode: "detach" });
+  }
 
   mainWindow.on("resize", () => {
     const size = mainWindow.getBounds();
@@ -45,70 +58,122 @@ app.whenReady().then(() => {
     return res;
   });
 
-  ipcMain.on("update-menu", (_, page: string) => {
-    const base = [
-      {
-        label: "開く",
-        submenu: [
-          {
-            label: "ファイルを開く",
-            click() {
-              // onOpenFile(mainWindow);
-              onCheckOpen(mainWindow, "openFile");
-            },
-          },
-          {
-            label: "フォルダを開く",
-            click() {
-              // onOpenFolder(mainWindow);
-              onCheckOpen(mainWindow, "openDirectory");
-            },
-          },
-        ],
-      },
-    ];
-    const getTemplate = () => {
-      switch (page) {
-        case "/":
-          return [
-            {
-              label: "書き出し",
-              submenu: [
-                {
-                  label: "一括で画像出力",
-                  click() {
-                    mainWindow.webContents.send("save-all-images");
-                  },
-                },
-              ],
-            },
-          ];
-        case "/play":
-          return [
-            {
-              label: "書き出し",
-              submenu: [
-                {
-                  label: "画像出力",
-                  click() {
-                    mainWindow.webContents.send("save-images");
-                  },
-                },
-              ],
-            },
-          ];
-        default:
-          return [];
-      }
-    };
-    const template = getTemplate();
-
-    const menu = Menu.buildFromTemplate([...base, ...template]);
-    Menu.setApplicationMenu(menu);
+  // Open urls in the user's browser
+  mainWindow.webContents.setWindowOpenHandler((edata) => {
+    shell.openExternal(edata.url);
+    return { action: "deny" };
   });
+
+  ipcMain.on(
+    "update-menu",
+    (_, page: String, files: Path[], folders: Path[]) => {
+      const base = [
+        {
+          label: "開く",
+          submenu: [
+            {
+              label: "ファイルを開く",
+              click() {
+                onCheckOpen(mainWindow, "openFile");
+              },
+            },
+            {
+              label: "フォルダを開く",
+              click() {
+                onCheckOpen(mainWindow, "openDirectory");
+              },
+            },
+            {
+              label: "履歴",
+              submenu: [
+                ...files.map((file) => ({
+                  label: file,
+                  click: () =>
+                    mainWindow.webContents.send("open-path", file, "openFile"),
+                })),
+                { label: "--------------", enabled: false },
+                ...folders.map((folder) => ({
+                  label: folder,
+                  click: () =>
+                    mainWindow.webContents.send(
+                      "open-path",
+                      folder,
+                      "openDirectory"
+                    ),
+                })),
+              ],
+            },
+          ],
+        },
+      ];
+      const getTemplate = () => {
+        switch (page) {
+          case "/":
+            return [
+              {
+                label: "書き出し",
+                submenu: [
+                  {
+                    label: "一括で画像出力",
+                    click() {
+                      mainWindow.webContents.send("save-all-images");
+                    },
+                  },
+                  {
+                    label: "設定",
+                    click() {
+                      mainWindow.webContents.send("open-setting");
+                    },
+                  },
+                ],
+              },
+            ];
+          case "/play":
+            return [
+              {
+                label: "書き出し",
+                submenu: [
+                  {
+                    label: "画像出力",
+                    click() {
+                      mainWindow.webContents.send("save-images");
+                    },
+                  },
+                  {
+                    label: "設定",
+                    click() {
+                      mainWindow.webContents.send("open-setting");
+                    },
+                  },
+                ],
+              },
+            ];
+          default:
+            return [];
+        }
+      };
+      const template = getTemplate();
+
+      const menu = Menu.buildFromTemplate([...base, ...template]);
+      Menu.setApplicationMenu(menu);
+    }
+  );
 
   // レンダラープロセスをロード
   mainWindow.loadFile("dist/index.html");
+
+  autoUpdater.checkForUpdatesAndNotify();
+});
+
+app.on("will-quit", () => {
+  try {
+    if (fs.existsSync(temp)) {
+      fs.rmSync(temp, { recursive: true, force: true });
+      console.log(`Temporary directory ${temp} deleted successfully.`);
+    }
+  } catch (err) {
+    console.error(`Failed to delete temporary directory ${temp}:`, err);
+  }
 });
 
 // すべてのウィンドウが閉じられたらアプリを終了する
@@ -121,12 +186,42 @@ const onCheckOpen = (
   mainWindow.webContents.send("check-open", id);
 };
 
+// ダウンロード完了後、アップデートのインストール
+autoUpdater.on("update-downloaded", () => {
+  dialog
+    .showMessageBox({
+      type: "info",
+      title: "Update Ready",
+      message:
+        "最新のバージョンがダウンロードされました。アプリを再起動しますか？",
+      buttons: ["今すぐ再起動", "後で"],
+    })
+    .then((result) => {
+      if (result.response === 0) {
+        try {
+          autoUpdater.quitAndInstall();
+        } catch (error) {
+          dialog.showMessageBox({
+            type: "info",
+            title: "Update Available",
+            message: error as string,
+          });
+        }
+      }
+    });
+});
+
 const selectDialog = async (
   target: "openFile" | "openDirectory"
 ): Promise<string> => {
-  const result = await dialog.showOpenDialog({
+  const options: Electron.OpenDialogOptions = {
     properties: [target],
-  });
+    ...(target === "openFile" && {
+      filters: [{ name: "Video Files", extensions: ["mp4", "mov"] }],
+    }),
+  };
+
+  const result = await dialog.showOpenDialog(options);
 
   if (result.canceled || !result.filePaths.length) {
     throw new Error("保存先が選択されていません。");
@@ -156,7 +251,7 @@ const selectDialog = async (
 
 ipcMain.handle(
   "open-file-folder",
-  async (_, id: "openFile" | "openDirectory"): Promise<string> => {
+  async (_, id: OpenFileFolderType): Promise<string> => {
     const res = await selectDialog(id);
     return res;
   }
@@ -214,35 +309,54 @@ ipcMain.handle(
   }
 );
 
-ipcMain.handle("save-composite-images", async (_, data: MarkersRender) => {
-  try {
-    const saveDir = await selectDialog("openDirectory");
+const isEmptyOrWhitespace = (str: string) => {
+  return str.trim() === "";
+};
 
-    for (const [videoPath, marker] of Object.entries(data)) {
-      const videoName = path.basename(videoPath, path.extname(videoPath));
+ipcMain.handle(
+  "save-composite-images",
+  async (_, data: MarkersRender, filename: string, offset: number) => {
+    try {
+      const saveDir = await selectDialog("openDirectory");
+      const reg = /#+/g;
 
-      const folderPath = path.join(saveDir, videoName);
-      fs.mkdirSync(folderPath, { recursive: true });
+      for (const [videoPath, marker] of Object.entries(data)) {
+        const videoName = path.basename(videoPath, path.extname(videoPath));
 
-      for (const [key, base64] of Object.entries(marker)) {
-        const filePath = path.join(folderPath, `${key}.png`);
+        const folderPath = path.join(saveDir, videoName);
+        fs.mkdirSync(folderPath, { recursive: true });
 
-        const base64Data = base64.split(",")[1]; // data:image/png;base64, を除去
-        const buffer = Buffer.from(base64Data, "base64");
+        for (const [key, base64] of Object.entries(marker)) {
+          const frame = Number(key) + offset;
+          let name = String(frame);
+          if (!isEmptyOrWhitespace(filename)) {
+            if (reg.test(filename)) {
+              name = filename.replace(reg, (match) => {
+                const numLength = match.length;
+                const numberStr = String(frame).padStart(numLength, "0");
+                return numberStr;
+              });
+            } else {
+              name = filename + String(frame);
+            }
+          }
 
-        fs.writeFileSync(filePath, buffer);
+          const filePath = path.join(folderPath, `${name}.png`);
+
+          const base64Data = base64.split(",")[1]; // data:image/png;base64, を除去
+          const buffer = Buffer.from(base64Data, "base64");
+
+          fs.writeFileSync(filePath, buffer);
+        }
       }
+
+      return { success: true, message: "画像を保存しました。" };
+    } catch (error: any) {
+      console.error(error);
+      return { success: false, message: error.message };
     }
-
-    return { success: true, message: "画像を保存しました。" };
-  } catch (error: any) {
-    console.error(error);
-    return { success: false, message: error.message };
   }
-});
-
-import os from "os";
-const temp = fs.mkdtempSync(os.tmpdir() + "/_video-preview-app-");
+);
 
 ipcMain.handle("mov-to-mp4", async (_, videoPath: string): Promise<Path> => {
   const videoName = path.basename(videoPath, path.extname(videoPath));

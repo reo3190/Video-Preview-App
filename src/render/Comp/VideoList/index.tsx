@@ -50,12 +50,6 @@ const VideoList = () => {
     filteredVideoList.forEach((e) => {
       filePaths.push(e.path);
     });
-
-    // const res = await window.electron.convert2HLS(filePaths);
-    // if (isErr(res)) return;
-    // setCurrentPaths(res);
-
-    // console.log(res);
   };
 
   useEffect(() => {}, [currentPaths]);

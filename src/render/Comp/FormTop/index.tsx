@@ -86,10 +86,11 @@ const FormTop = () => {
             }}
             onKeyDown={(e) => handleKeyDown(e)}
           /> */}
-          {inputPath}
           <div className="inputpath-icon">
             <FaFolder size={"1.5rem"} />
           </div>
+          <div className="inputpath-str">{inputPath}</div>
+
           {/* <button className="update" onClick={() => enterPath(inputPath)}>
             {lastLoadTime >= 1 && <TbReload size={"1.8rem"} />}
             {getLastUpdate()}
@@ -123,8 +124,6 @@ const FormTop = () => {
               <option value="no">No mark</option>
             </select>
           </div>
-        </div>
-        <div className="fil-search-wrapper">
           <div className="fil-search">
             <input
               value={filter.wordInput}

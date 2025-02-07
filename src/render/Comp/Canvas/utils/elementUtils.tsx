@@ -62,6 +62,7 @@ const createElement = (
         option: options2,
       };
     case "clear":
+    case "mouse":
       return {
         id,
         tool,
@@ -85,7 +86,8 @@ const updateElement = (
   toolState: PaintToolConfig,
   paintConfig: PaintConfig,
   pressure: React.RefObject<number>,
-  canvasCtx: any
+  canvasCtx: any,
+  scale: Size
 ): void => {
   const elementsCopy: PaintElement[] = [...elements];
 
@@ -110,19 +112,22 @@ const updateElement = (
     case "text":
       if (!selectedElement) return;
       canvasCtx.textBaseline = "top";
-      canvasCtx.font = `${elementsCopy[id].size}px '${elementsCopy[id].font}', sans-serif`;
+      canvasCtx.font = `${(elementsCopy[id].size || 1) * 10}px '${
+        elementsCopy[id].font
+      }', sans-serif`;
       const fixedSize = fixedSizeText(
         selectedElement.text || "",
-        elementsCopy[id].size
+        (elementsCopy[id].size || 1) * 10
       );
       const textWidth = canvasCtx.measureText(fixedSize.widthText).width;
+      const textHeight = fixedSize.height;
       elementsCopy[id] = {
         ...createElement(
           id,
           x1,
           y1,
           x1 + textWidth,
-          y1 + fixedSize.height,
+          y1 + textHeight,
           tool,
           toolState,
           paintConfig,
@@ -136,6 +141,7 @@ const updateElement = (
       };
       break;
     case "clear":
+    case "mouse":
       break;
     default:
       throw new Error(`Type not recognised: ${tool}`);
@@ -148,7 +154,8 @@ const drawElement = (
   context: any,
   element: PaintElement,
   width: number = 0,
-  height: number = 0
+  height: number = 0,
+  scale: Size
 ): void => {
   switch (element.tool) {
     case "pen":
@@ -160,10 +167,17 @@ const drawElement = (
       break;
     case "text":
       context.textBaseline = "top";
-      const fontSize = element.size;
+      const fontSize = (element.size as number) * 10;
       context.font = `${fontSize}px '${element.font}', sans-serif`;
       context.fillStyle = hexToRgba(element.color, element.opacity);
-      fixedFillText(context, element.text, element.x1, element.y1, fontSize);
+      fixedFillText(
+        context,
+        element.text,
+        element.x1,
+        element.y1,
+        fontSize,
+        scale
+      );
       break;
     case "eraser":
       context.globalCompositeOperation = "destination-out";
@@ -180,6 +194,8 @@ const drawElement = (
       const zoomOffsetX = (zoomWidth - width) / 2;
       const zoomOffsetY = (zoomHeight - height) / 2;
       context.clearRect(-zoomOffsetX, -zoomOffsetY, width * 5, height * 5);
+      break;
+    case "mouse":
       break;
     default:
       throw new Error(`Type not recognised: ${element.tool}`);
@@ -204,6 +220,7 @@ const fixedFillText = (
   x: number = 0,
   y: number = 0,
   lineHeight: number = 0,
+  scale: Size,
   align: "right" | "left" | "center" = "left"
 ): void => {
   const ty = y - lineHeight / 2;

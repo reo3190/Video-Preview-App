@@ -1,0 +1,35 @@
+.player-head {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  justify-content: center;
+  align-items: center;
+  background: #333;
+  height: 40px;
+
+  .back-button {
+    grid-column: 1/2;
+    width: 50px;
+    height: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .video-path-wrapper {
+    grid-column: 2/3;
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    gap: 10px;
+    padding-right: 20px;
+    font-size: 1.2rem;
+    .video-path {
+      text-align: end;
+    }
+
+    .video-name {
+      text-align: start;
+    }
+  }
+}

@@ -1,22 +1,97 @@
-.button-wrapper {
-  display: flex;
-  position: relative;
-  justify-content: center;
-  background: var(--video-UI-bg);
-  width: 100%;
+.video-ui-wrapper {
+  position: fixed;
+  bottom: 40px;
+  right: 0;
+  width: calc(100vw - 60px);
+  height: 40px;
+  background: #333;
+  display: grid;
+  // justify-content: center;
+  // align-items: center;
+  grid-template-columns: 1fr 1fr 1fr;
 
-  button {
-    border: none;
-    color: var(--video-UI-tx);
-    background: transparent;
-    border-radius: 1px;
+  font-size: 1.2rem;
+
+  z-index: 10;
+
+  .marker-button-wrapper {
+    display: flex;
+    gap: 5px;
     justify-content: center;
-    cursor: pointer;
-    transition: 0.2s;
+    align-items: center;
 
-    &:hover {
-      background: var(--video-UI-hover-bg);
-      color: var(--video-UI-hover-tx);
+    button {
+      width: 40px;
+      height: 100%;
+      border: none;
+      color: var(--video-UI-tx);
+      background: transparent;
+      border-radius: 1px;
+      justify-content: center;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      &:hover {
+        background: #666;
+        color: var(--video-UI-hover-tx);
+      }
+    }
+  }
+
+  .button-wrapper {
+    grid-column: 2/3;
+    display: flex;
+    gap: 5px;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+    background: var(--video-UI-bg);
+    width: 100%;
+
+    button {
+      width: 40px;
+      height: 100%;
+      border: none;
+      color: var(--video-UI-tx);
+      background: transparent;
+      border-radius: 1px;
+      justify-content: center;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      &:hover {
+        background: #666;
+        color: var(--video-UI-hover-tx);
+      }
+    }
+  }
+
+  .fps-wrapper {
+    grid-column: 3/4;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    // justify-content: center;
+    // align-items: center;
+    gap: 10px;
+
+    div {
+      display: flex;
+      // justify-content: center;
+      align-items: center;
+    }
+    .seek-frame {
+      font-size: 1.8rem;
+      justify-content: flex-end;
+    }
+    .fps {
+      font-size: 1.2rem;
     }
   }
 }

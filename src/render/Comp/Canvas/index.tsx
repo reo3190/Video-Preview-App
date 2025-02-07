@@ -20,14 +20,16 @@ const Canvas = forwardRef<any, Props>(
 
     return (
       <>
-        <div className="canvas-frame">
+        <div
+          className={`canvas-frame ${activePaintTool === "mouse" && "notShow"}`}
+        >
           <Paint
             baseSize={baseSize}
             size={baseSize}
             calcBrightness={() => 0}
             tool={activePaintTool}
             toolState={paintTool[activePaintTool]}
-            paintConfig={{ smooth: 0, pressure: 1 }}
+            paintConfig={{ smooth: 0, pressure: 0 }}
             setCanUndo={setCanUndo}
             setCanRedo={setCanRedo}
             onDraw={onDraw}

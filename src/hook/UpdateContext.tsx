@@ -4,15 +4,16 @@ import {
   useState,
   useContext,
   ReactNode,
+  useEffect,
 } from "react";
-import { Filter } from "./api";
+import { useNavigate, useLocation, To } from "react-router-dom";
 // ---------------------------------------------------------
-
-export type CacheMode = "add" | "get" | "remove" | "clear";
 
 interface DataContext {
   windowSize: Electron.Rectangle;
   setWindowSize: (e: Electron.Rectangle) => void;
+  load: boolean;
+  setLoad: (e: boolean) => void;
   inputPath: string;
   setInputPath: (e: string) => void;
   filter: Filter;
@@ -24,7 +25,7 @@ interface DataContext {
   curPage: number;
   setCurPage: (e: number) => void;
   curVideo: Video | null;
-  setCurVideo: (e: Video) => void;
+  setCurVideo: (e: Video | null) => void;
   lastLoad: number;
   setLastLoad: (e: number) => void;
   imgCache: Map<string, string>;
@@ -43,19 +44,26 @@ interface DataContext {
   setPaintConfig: (update: Partial<PaintConfig>) => void;
   videoMarkers: Markers;
   setVideoMarkers: (path: string, marker: Marker) => void;
-  __initVideoMarkers__: () => void;
+  initVideoMarkers: (p: string, v: Video | null, vv: Video[]) => void;
   movPathCache: Map<string, string>;
   editMovPathCache: (
     mode: CacheMode,
     key: string,
     value?: string
   ) => string | null;
+  outputFileName: string;
+  setOutputFileName: (e: string) => void;
+  outputFrameOffset: number;
+  setOutputFrameOffset: (e: number) => void;
+  context: ContextType;
 }
 
 const defaultContext: DataContext = {
   windowSize: { x: 0, y: 0, width: 0, height: 0 },
   setWindowSize: () => {},
-  inputPath: "L:\\02_check\\02_cut\\mk_F",
+  load: false,
+  setLoad: () => {},
+  inputPath: "",
   // inputPath: "",
   setInputPath: () => {},
   filter: {
@@ -84,19 +92,33 @@ const defaultContext: DataContext = {
   paintTool: {
     pen: { size: 10, color: "#000000", opacity: 1 },
     eraser: { size: 10, color: "", opacity: 1 },
-    text: { size: 10, color: "#000000", opacity: 1 },
+    text: { size: 5, color: "#000000", opacity: 1 },
     clear: { size: 0, color: "", opacity: 0 },
+    mouse: { size: 0, color: "", opacity: 0 },
   },
   setPaintTool: () => {},
-  activePaintTool: "pen",
+  activePaintTool: "mouse",
   setActivePaintTool: () => {},
   paintConfig: { smooth: 0, pressure: 0 },
   setPaintConfig: () => {},
   videoMarkers: {},
   setVideoMarkers: () => {},
-  __initVideoMarkers__: () => {},
+  initVideoMarkers: () => {},
   movPathCache: new Map<string, string>(),
   editMovPathCache: () => null,
+  outputFileName: "",
+  setOutputFileName: () => {},
+  outputFrameOffset: 0,
+  setOutputFrameOffset: () => {},
+  context: {
+    setLoad: () => {},
+    initVideoMarkers: () => {},
+    videoMarkers: {},
+    editVideoMetaCache: () => null,
+    editMovPathCache: () => null,
+    navi: () => {},
+    loc: null,
+  },
 };
 
 const datactx = createContext<DataContext>(defaultContext);
@@ -107,6 +129,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [windowSize, setWindowSize] = useState<Electron.Rectangle>(
     defaultContext.windowSize
   );
+  const [load, setLoad] = useState<boolean>(defaultContext.load);
   const [inputPath, setInputPath] = useState<string>(defaultContext.inputPath);
   const [filter, setFilter] = useState<Filter>(defaultContext.filter);
   const [videoList, setVideoList] = useState<Video[]>(defaultContext.videoList);
@@ -133,9 +156,20 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     defaultContext.videoMarkers
   );
   const movPathCache = useState<Map<string, string>>(new Map())[0];
+  const [outputFileName, setOutputFileName] = useState<string>(
+    defaultContext.outputFileName
+  );
+  const [outputFrameOffset, setOutputFrameOffset] = useState<number>(
+    defaultContext.outputFrameOffset
+  );
+  const [context, setContext] = useState<ContextType>(defaultContext.context);
 
   const updateWindowSize = useCallback((size: Electron.Rectangle): void => {
     setWindowSize(size);
+  }, []);
+
+  const updateLoad = useCallback((e: boolean): void => {
+    setLoad(e);
   }, []);
 
   const updateInputPath = useCallback((path: string): void => {
@@ -151,6 +185,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateVideoList = useCallback((e: Video[]): void => {
     setVideoList(e);
+    updateCurPage(0);
   }, []);
 
   const updateFilteredVideoList = useCallback((e: Video[]): void => {
@@ -161,7 +196,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setCurPage(e);
   }, []);
 
-  const updateCurVideo = useCallback((e: Video): void => {
+  const updateCurVideo = useCallback((e: Video | null): void => {
     setCurVideo(e);
   }, []);
 
@@ -237,10 +272,16 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setVideoMarkers((pre) => ({ ...pre, [path]: marker }));
   }, []);
 
-  const __initVideoMarkers__ = useCallback(() => {
-    setVideoMarkers({});
-    // alert("これは警告メッセージです！");
-  }, []);
+  const initVideoMarkers = useCallback(
+    (p: string, v: Video | null, vv: Video[]) => {
+      setVideoMarkers({});
+      setInputPath(p);
+      setCurVideo((pre) => (v ? v : pre));
+      setVideoList(vv);
+      // alert("これは警告メッセージです！");
+    },
+    []
+  );
 
   const editMovPathCache = useCallback(
     (mode: CacheMode, key: string, value?: string): string | null => {
@@ -262,11 +303,41 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     [movPathCache]
   );
 
+  const updateOutputFileName = useCallback((e: string): void => {
+    setOutputFileName(e);
+  }, []);
+
+  const updateOutputFrameOffset = useCallback((e: number): void => {
+    setOutputFrameOffset(e);
+  }, []);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const navi = (s: String, reload: Boolean) => {
+    const to = s as To;
+
+    navigate(to, { state: { reload } });
+  };
+
+  useEffect(() => {
+    setContext({
+      setLoad: updateLoad,
+      initVideoMarkers: initVideoMarkers,
+      videoMarkers: videoMarkers,
+      editVideoMetaCache: editVideoMetaCache,
+      editMovPathCache: editMovPathCache,
+      navi: navi,
+      loc: location,
+    });
+  }, [videoMarkers, location]);
+
   return (
     <datactx.Provider
       value={{
         windowSize,
         setWindowSize: updateWindowSize,
+        load,
+        setLoad: updateLoad,
         inputPath,
         setInputPath: updateInputPath,
         filter,
@@ -293,9 +364,14 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setPaintConfig: updatePaintConfig,
         videoMarkers,
         setVideoMarkers: updateVideoMarkers,
-        __initVideoMarkers__,
+        initVideoMarkers,
         movPathCache,
         editMovPathCache,
+        outputFileName,
+        setOutputFileName: updateOutputFileName,
+        outputFrameOffset,
+        setOutputFrameOffset: updateOutputFrameOffset,
+        context,
       }}
     >
       {children}

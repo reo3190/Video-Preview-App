@@ -14,7 +14,7 @@ export const CaptureDraw = (
   const index = history[1];
 
   elements[index].forEach((element) => {
-    drawElement(overCtx, element, history[2].w, history[2].h);
+    drawElement(overCtx, element, history[2].w, history[2].h, { w: 1, h: 1 });
   });
 
   const baseCanvas = document.createElement("canvas");

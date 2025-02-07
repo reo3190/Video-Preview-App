@@ -1,12 +1,16 @@
 {
   "name": "video-preview-app",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "main": "dist/main.js",
   "scripts": {
     "dev": "rimraf dist && run-p dev:webpack dev:electron",
     "dev:webpack": "cross-env NODE_ENV=\"development\" webpack --progress",
     "dev:electron": "wait-on ./dist/index.html ./dist/main.js && electronmon .",
-    "build": "cross-env NODE_ENV=\"production\" webpack --progress"
+    "dev:pro": "rimraf dist && run-p dev:webpack:pro dev:electron:pro",
+    "dev:webpack:pro": "cross-env NODE_ENV=\"production\" webpack --progress",
+    "dev:electron:pro": "wait-on ./dist/index.html ./dist/main.js && electronmon .",
+    "build": "electron-builder --win --x64",
+    "build:publish": "electron-builder --win --x64 --publish always"
   },
   "keywords": [],
   "author": "",
@@ -17,9 +21,34 @@
     ]
   },
   "build": {
+    "appId": "com.sublimation.video-preview-app",
+    "directories": {
+      "output": "build"
+    },
+    "files": [
+      "dist",
+      "node_modules",
+      "package.json",
+      "resources/ffmpeg"
+    ],
     "extraResources": [
-      "resources/ffmpeg/ffmpeg.exe"
-    ]
+      {
+        "from": "resources/ffmpeg/",
+        "to": "ffmpeg/"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "reo3190",
+      "repo": "Video-Preview-App"
+    }
   },
   "description": "",
   "devDependencies": {
@@ -30,6 +59,7 @@
     "cross-env": "^7.0.3",
     "css-loader": "^7.1.2",
     "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
     "electronmon": "^2.0.3",
     "html-webpack-plugin": "^5.6.3",
     "mini-css-extract-plugin": "^2.9.2",
@@ -49,11 +79,13 @@
   "dependencies": {
     "@napi-rs/canvas": "^0.1.65",
     "@popcornjs/core": "^2.8.1",
+    "electron-updater": "^6.1.4",
     "perfect-freehand": "^1.2.2",
     "popcorn": "^0.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.4.0",
+    "react-loader-spinner": "^6.1.6",
     "react-router-dom": "^7.1.1",
     "react-spring": "^9.7.5",
     "video.js": "^8.21.0"

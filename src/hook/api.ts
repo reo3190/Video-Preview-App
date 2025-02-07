@@ -90,7 +90,7 @@ export const num2date = (value: string): string => {
 export const path2VideoType = (p: string): Video => {
   const directory = p.split("\\");
   const name = directory[directory.length - 1];
-  const extension = name.split(".").slice(-1)[0];
+  const extension = "." + name.split(".").slice(-1)[0];
   return {
     name,
     path: p,
@@ -112,9 +112,36 @@ export const hasAnyHistory = (data: Markers): boolean => {
   });
 };
 
-export const mov2mp4 = async (video: Video): Promise<Path | null> => {
-  console.log(video.extension);
+const mov2mp4 = async (video: Video): Promise<Path | null> => {
   if (video.extension !== ".mov") return null;
   const res = await window.electron.MOV2MP4(video.path);
   return res;
+};
+
+const loadMeta = async (editVideoMetaCache: editVideoMetaCache, path: Path) => {
+  const cache = editVideoMetaCache("get", path);
+  if (!cache) {
+    const res = await window.electron.getVideoMeta(path);
+    const size: Size = { w: res.streams[0].width, h: res.streams[0].height };
+    const str = res.streams[0].r_frame_rate;
+    const parts = str.split("/");
+    const fps: FPS =
+      parts.length === 2 ? Number(parts[0]) / Number(parts[1]) : NaN;
+    editVideoMetaCache("add", path, [size, fps]);
+  }
+};
+
+export const loadFile = async (
+  editVideoMetaCache: editVideoMetaCache,
+  editMovPathCache: editMovPathCache,
+  video: Video
+) => {
+  const path = video.path;
+
+  await loadMeta(editVideoMetaCache, path);
+
+  const movPath = await mov2mp4(video);
+  if (movPath) {
+    editMovPathCache("add", path, movPath);
+  }
 };

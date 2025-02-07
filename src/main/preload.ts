@@ -4,7 +4,6 @@ import {
   IpcRendererEvent,
   webUtils,
 } from "electron";
-import { getCaputureData } from "./utils/ffmpeg";
 
 export type Channels = "ipc-example";
 
@@ -28,11 +27,11 @@ const electronHandler = {
   },
 
   showFilePath: (file: File) => {
-    // レンダラープロセスより渡されたFileオブジェクトから絶対パスを取得
     return webUtils.getPathForFile(file);
   },
 
-  updateMenu: (menuItems: string) => ipcRenderer.send("update-menu", menuItems),
+  updateMenu: (menuItems: string, files: Path[], folders: Path[]) =>
+    ipcRenderer.send("update-menu", menuItems, files, folders),
 
   getWindowSize: async (): Promise<Electron.Rectangle> => {
     return await ipcRenderer.invoke("get-window-size");
@@ -43,7 +42,6 @@ const electronHandler = {
       callback(size);
     ipcRenderer.on("window-resize", listener);
 
-    // リスナーを管理する仕組みを追加
     return () => {
       ipcRenderer.removeListener("window-resize", listener);
     };
@@ -62,24 +60,6 @@ const electronHandler = {
     const response = await ipcRenderer.invoke("open-file-folder", id);
     return response;
   },
-
-  // onOpenFile: (callback: (path: string) => () => void) => {
-  //   const listener = (_: IpcRendererEvent, path: string) => callback(path);
-  //   ipcRenderer.on("open-file", listener);
-
-  //   return () => {
-  //     ipcRenderer.removeListener("open-file", listener);
-  //   };
-  // },
-
-  // onOpenFolder: (callback: (path: string) => () => void) => {
-  //   const listener = (_: IpcRendererEvent, path: string) => callback(path);
-  //   ipcRenderer.on("open-folder", listener);
-
-  //   return () => {
-  //     ipcRenderer.removeListener("open-folder", listener);
-  //   };
-  // },
 
   getVideoMeta: async (videoPath: string): Promise<any | Err> => {
     const response = await ipcRenderer.invoke("get-video-meta", videoPath);
@@ -110,7 +90,6 @@ const electronHandler = {
     const listener = () => callback();
     ipcRenderer.on("save-images", listener);
 
-    // リスナーを管理する仕組みを追加
     return () => {
       ipcRenderer.removeListener("save-images", listener);
     };
@@ -120,7 +99,6 @@ const electronHandler = {
     const listener = () => callback();
     ipcRenderer.on("save-all-images", listener);
 
-    // リスナーを管理する仕組みを追加
     return () => {
       ipcRenderer.removeListener("save-all-images", listener);
     };
@@ -150,13 +128,41 @@ const electronHandler = {
     return response;
   },
 
-  saveCompositeImages: async (data: MarkersRender) => {
-    const response = await ipcRenderer.invoke("save-composite-images", data);
+  saveCompositeImages: async (
+    data: MarkersRender,
+    filename: string,
+    offset: number
+  ) => {
+    const response = await ipcRenderer.invoke(
+      "save-composite-images",
+      data,
+      filename,
+      offset
+    );
   },
 
   MOV2MP4: async (videoPath: Path): Promise<Path> => {
     const response = await ipcRenderer.invoke("mov-to-mp4", videoPath);
     return response;
+  },
+
+  onOpenSetting: (callback: () => () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("open-setting", listener);
+
+    // リスナーを管理する仕組みを追加
+    return () => {
+      ipcRenderer.removeListener("open-setting", listener);
+    };
+  },
+
+  onOpenFile: (callback: (p: Path, id: OpenFileFolderType) => () => void) => {
+    const listener = (_: IpcRendererEvent, p: Path, id: OpenFileFolderType) =>
+      callback(p, id);
+    ipcRenderer.on("open-path", listener);
+    return () => {
+      ipcRenderer.removeListener("open-path", listener);
+    };
   },
 };
 

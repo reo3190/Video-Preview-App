@@ -1,4 +1,9 @@
-const positionWithinElement = (x: number, y: number, element: PaintElement) => {
+const positionWithinElement = (
+  x: number,
+  y: number,
+  element: PaintElement,
+  scale: Size
+) => {
   const { tool, size = 1, x1 = 0, x2 = 0, y1 = 0, y2 = 0 } = element;
   switch (tool) {
     case "pen":
@@ -6,11 +11,15 @@ const positionWithinElement = (x: number, y: number, element: PaintElement) => {
     case "clear":
       return null;
     case "text":
-      return x >= x1 && x <= x2 && y >= y1 - size / 2 && y <= y2 - size / 2
+      return x >= x1 &&
+        x <= x2 &&
+        y >= y1 - (size * 10) / 2 &&
+        y <= y2 - (size * 10) / 2
         ? "inside"
         : null;
+    // return x >= x1 && x <= x2 && y >= y1 && y <= y2 ? "inside" : null;
     default:
-      throw new Error(`Type not recognised: ${tool}`);
+      return null;
   }
 };
 

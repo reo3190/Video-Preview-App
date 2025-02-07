@@ -13,6 +13,7 @@ import { VideoFrame } from "./VideoFrame";
 import Player from "video.js/dist/types/player";
 import { num2date, frame2time, time2frame, round } from "../../../hook/api";
 import { useDataContext } from "../../../hook/UpdateContext";
+import VideoUI from "./VideoUI";
 
 // const fps = 24;
 
@@ -26,6 +27,8 @@ interface VideoPlayerProps {
   onSeek: (frame: number) => void;
   markers: Marker;
   fps: number;
+  seekDownMarker: () => void;
+  seekUpMarker: () => void;
 }
 
 // 公開するメソッドの型
@@ -49,6 +52,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       onSeek,
       markers,
       fps,
+      seekDownMarker,
+      seekUpMarker,
     },
     ref
   ) => {
@@ -60,6 +65,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const [isPlaying, setIsPlaying] = useState(false);
     const frameRef = useRef<number>(0);
     const [frame, setFrame] = useState<number>(1);
+    const [allFrame, setAllFrame] = useState<number>(1);
 
     const v = videoMarkers[curVideo.path];
 
@@ -131,7 +137,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         frameRate: fps,
         callback: (frame: number) => {
           frameRef.current = frame;
-          setFrame(frame);
+          setFrame(round(frame));
           setSlider(frame);
           onSeek(frameRef.current);
         },
@@ -149,10 +155,13 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
         const el = document.createElement("div");
         el.className = "vjs-marker-frame";
-        const _total_float = (total || 1) * fps;
+        const _total_float = Math.round(round((total || 1) * fps));
         const wid = (1 / _total_float) * 100;
         el.style.width = wid + "%";
+        el.style.minWidth = "5px";
         p.append(el);
+
+        setAllFrame(_total_float);
       });
     };
 
@@ -173,7 +182,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           const seekTime = round(
             Math.min(duration, currentTime + frame2time(1, fps))
           );
-          playerRef.current.currentTime(seekTime);
+          const next = time2frame(seekTime, fps) + 1;
+          if (next <= allFrame) {
+            playerRef.current.currentTime(seekTime);
+          }
         }
       }
     };
@@ -206,6 +218,17 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (playerRef.current) {
         playerRef.current.width(w);
       }
+    };
+
+    const getSize = (): Size | null => {
+      if (playerRef.current) {
+        const w = playerRef.current.width();
+        const h = playerRef.current.height();
+        if (w && h) {
+          return { w: w, h: h };
+        }
+      }
+      return null;
     };
 
     const getCurrentTime = (): number => {
@@ -249,6 +272,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       const wid = (1 / total_float) * 100;
       el.style.left = left - wid + "%";
       el.style.width = wid + "%";
+      el.style.minWidth = "5px";
       el.setAttribute("data-time", String(frame));
       p.append(el);
     };
@@ -297,14 +321,17 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       seekDown: () => seekDown(),
       seekToTop: () => playerRef.current?.currentTime(0),
       seekToLast: () => {
-        const duration = playerRef.current?.duration() || 0;
-        playerRef.current?.currentTime(duration);
+        const d = allFrame - frame;
+        for (let i = 0; i < d; i++) {
+          seekUp();
+        }
       },
       getCurrentTime: () => playerRef.current?.currentTime() || 0,
       setCurrentTime: (time: number) => playerRef.current?.currentTime(time),
       getCurrentFrame: () => getCurrentFrame(),
       setCurrentFrame: (f: number) => setCurrentFrame(f),
       setWidth: (w: number) => setWidth(w),
+      getSize: () => getSize(),
       addMarker: (time: number) => addMarker(time),
       removeMarker: (f: number) => removeMarker(f),
       setPath: (p: string) => setPath(p),
@@ -315,7 +342,17 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         <div data-vjs-player>
           <div ref={videoRef} />
         </div>
-        <div id="currentFrame">{frame}</div>
+        <VideoUI
+          path=""
+          fps={round(fps)}
+          frame={frame}
+          allFrame={allFrame}
+          isPlay={isPlaying}
+          seekDownMarker={seekDownMarker}
+          seekUpMarker={seekUpMarker}
+          ref={ref}
+        />
+        {/* <div id="currentFrame">{frame}</div> */}
       </>
     );
   }

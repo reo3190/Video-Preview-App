@@ -56,7 +56,6 @@ const Paint = forwardRef<any, Props>(
   ) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const { curVideo, setVideoMarkers } = useDataContext();
 
     const {
       elements,
@@ -86,6 +85,8 @@ const Paint = forwardRef<any, Props>(
 
     const [baseDimensions, setBaseDimensions] = useState<Size>(baseSize);
 
+    const [update, setUpdate] = useState<boolean | null>(null);
+
     useLayoutEffect(() => {
       const canvasCtx = getContext();
       clear();
@@ -98,7 +99,8 @@ const Paint = forwardRef<any, Props>(
           canvasCtx,
           element,
           canvasRef.current?.width,
-          canvasRef.current?.height
+          canvasRef.current?.height,
+          scale
         );
       });
 
@@ -160,10 +162,40 @@ const Paint = forwardRef<any, Props>(
       // }
     }, []);
 
-    const startDrawing = (e: any) => {
-      if (action === "writing" || !focus || e.button === 2) return;
+    useEffect(() => {
+      if (update !== null) {
+        onDraw(history, index, baseDimensions);
+      }
+    }, [update]);
 
-      const { x, y } = getMouseCoordinates(e);
+    const start_mouse = (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (e.pointerType !== "mouse") return;
+      const offsetX = e.nativeEvent.offsetX;
+      const offsetY = e.nativeEvent.offsetY;
+      const button = e.button;
+
+      startDrawing(offsetX, offsetY, button);
+    };
+
+    const start_pen = (e: React.TouchEvent<HTMLCanvasElement>) => {
+      const canvas = e.currentTarget;
+      const rect = canvas.getBoundingClientRect();
+
+      const x = e.touches[0].clientX - rect.left;
+      const y = e.touches[0].clientY - rect.top;
+
+      startDrawing(x, y);
+    };
+
+    const startDrawing = (
+      offsetX: number,
+      offsetY: number,
+      button: number | null = null
+    ) => {
+      if (tool === "mouse") return;
+      if (action === "writing" || !focus || (button && button === 2)) return;
+
+      const { x, y } = getMouseCoordinates(offsetX, offsetY);
 
       const clickEl = getElementAtPosition(x, y, elements);
       if (clickEl && tool === "text") {
@@ -190,28 +222,35 @@ const Paint = forwardRef<any, Props>(
 
         setAction(tool === "text" ? "writing" : "drawing");
       }
-
-      if (e.pointerType === "pen") {
-        e.preventDefault();
-      }
     };
 
-    const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (e.pointerType === "mouse") {
-        // pressure.current = 1;
-      } else {
-        // pressure.current = e.pressure;
-      }
+    const draw_mouse = (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const x = e.nativeEvent.offsetX;
+      const y = e.nativeEvent.offsetY;
+      const target = e.target;
 
-      const { x, y } = getMouseCoordinates(e);
+      draw(x, y, target);
+    };
+
+    const draw_pen = (e: React.TouchEvent<HTMLCanvasElement>) => {
+      const canvas = e.currentTarget;
+      const rect = canvas.getBoundingClientRect();
+
+      const x = e.touches[0].clientX - rect.left;
+      const y = e.touches[0].clientY - rect.top;
+      const target = e.touches[0].target;
+
+      draw(x, y, target);
+    };
+
+    const draw = (offsetX: number, offsetY: number, target: EventTarget) => {
+      if (tool === "mouse") return;
+
+      const { x, y } = getMouseCoordinates(offsetX, offsetY);
 
       if (tool === "pen" || "eraser") {
         const size = toolState.size;
-        backBrightness.current = calcBrightness(
-          e.nativeEvent.offsetX,
-          e.nativeEvent.offsetY,
-          size
-        );
+        backBrightness.current = calcBrightness(offsetX, offsetY, size);
         backBrightness.current < 128
           ? setCorsorColor(true)
           : setCorsorColor(false);
@@ -219,12 +258,12 @@ const Paint = forwardRef<any, Props>(
 
       if (tool === "text") {
         const element = getElementAtPosition(x, y, elements);
-        const target = e.target as HTMLElement;
+        const HTMLTarget = target as HTMLElement;
         if (element && element.position === "inside" && action !== "writing") {
-          target.style.cursor = cursorForPosition(element.position);
+          HTMLTarget.style.cursor = cursorForPosition(element.position);
           setHoverText(true);
         } else {
-          target.style.cursor = "text";
+          HTMLTarget.style.cursor = "text";
           setHoverText(false);
         }
       } else {
@@ -249,7 +288,8 @@ const Paint = forwardRef<any, Props>(
           toolState,
           paintConfig,
           pressure,
-          getContext()
+          getContext(),
+          scale
         );
       } else if (action === "moving") {
         if (!selectedElement) return;
@@ -280,15 +320,37 @@ const Paint = forwardRef<any, Props>(
           toolState,
           paintConfig,
           pressure,
-          getContext()
+          getContext(),
+          scale
         );
       }
     };
 
-    const endDrawing = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+    const end_mouse = (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (e.pointerType !== "mouse") {
+        return;
+      }
+      const x = e.nativeEvent.offsetX;
+      const y = e.nativeEvent.offsetY;
+
+      endDrawing(x, y);
+    };
+
+    const end_pen = (e: React.TouchEvent<HTMLCanvasElement>) => {
+      const canvas = e.currentTarget;
+      const rect = canvas.getBoundingClientRect();
+
+      const x = e.changedTouches[0].clientX - rect.left;
+      const y = e.changedTouches[0].clientY - rect.top;
+
+      endDrawing(x, y);
+    };
+
+    const endDrawing = (offsetX: number, offsetY: number) => {
+      if (tool === "mouse") return;
       if (action === "writing" || action === "none") return;
 
-      const { x, y } = getMouseCoordinates(e);
+      const { x, y } = getMouseCoordinates(offsetX, offsetY);
 
       if (action === "drawing") {
         const canvasCtx = getContext();
@@ -307,8 +369,8 @@ const Paint = forwardRef<any, Props>(
       setSelectedElement(null);
 
       // saveHistory();
-      console.log(elements.length - 1);
-      onDraw(history, index, baseDimensions);
+      // onDraw(history, index, baseDimensions);
+      setUpdate((p) => !p);
     };
 
     const handleBlur = (e: any) => {
@@ -316,6 +378,8 @@ const Paint = forwardRef<any, Props>(
       const { id, x1, y1, tool, size, color, opacity, font } = selectedElement;
       setAction("none");
       setSelectedElement(null);
+      // onDraw(history, index, baseDimensions);
+      setUpdate((p) => !p);
 
       updateElement(
         id,
@@ -338,7 +402,8 @@ const Paint = forwardRef<any, Props>(
         toolState,
         paintConfig,
         pressure,
-        getContext()
+        getContext(),
+        scale
       );
     };
 
@@ -346,7 +411,10 @@ const Paint = forwardRef<any, Props>(
       e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
     ) => {
       if (!hoverText) return;
-      const { x, y } = getMouseCoordinates(e);
+      const { x, y } = getMouseCoordinates(
+        e.nativeEvent.offsetX,
+        e.nativeEvent.offsetY
+      );
 
       const element = getElementAtPosition(x, y, elements);
       setSelectedElement(element);
@@ -363,17 +431,18 @@ const Paint = forwardRef<any, Props>(
         elements
           .map((element) => ({
             ...element,
-            position: positionWithinElement(x, y, element) || null,
+            position: positionWithinElement(x, y, element, scale) || null,
           }))
           .find((element) => element.position !== null) ?? null
       );
     };
 
     const getMouseCoordinates = (
-      e: React.MouseEvent<HTMLCanvasElement, MouseEvent>
+      offsetX: number,
+      offsetY: number
     ): { x: number; y: number } => {
-      const x = e.nativeEvent.offsetX / scale.w;
-      const y = e.nativeEvent.offsetY / scale.h;
+      const x = offsetX / scale.w;
+      const y = offsetY / scale.h;
       return { x, y };
     };
 
@@ -502,7 +571,8 @@ const Paint = forwardRef<any, Props>(
           canvasCtx,
           element,
           canvasRef.current?.width,
-          canvasRef.current?.height
+          canvasRef.current?.height,
+          scale
         );
       });
 
@@ -570,26 +640,32 @@ const Paint = forwardRef<any, Props>(
     }, [onChange]);
 
     return (
-      <div className="canvas-container" style={{ width: `${_size}px` }}>
+      <div className="canvas-container">
         {action === "writing" ? (
           <textarea
             ref={textareaRef}
             onBlur={(e) => handleBlur(e)}
             style={{
               position: "fixed",
-              top: selectedElement?.y1,
-              left: selectedElement?.x1,
-              font: `${selectedElement?.size}px "${selectedElement?.font}", sans-serif`,
+              top: (selectedElement?.y1 || 1) * scale.h,
+              left: (selectedElement?.x1 || 1) * scale.w,
+              // top: "0",
+              // left: "0",
+              font: `${(selectedElement?.size || 1) * scale.w * 10}px "${
+                selectedElement?.font
+              }", sans-serif`,
               lineHeight: "120%",
-              width: `${Math.max(
-                (selectedElement?.x2 || 0) - (selectedElement?.x1 || 0),
-                selectedElement?.size || 0,
-                100
-              )}px`,
-              height: `${Math.max(
-                ((selectedElement?.y2 || 0) - (selectedElement?.y1 || 0)) * 1.2,
-                (selectedElement?.size || 0) * 3 + 20
-              )}px`,
+              // width: `${Math.max(
+              //   ((selectedElement?.x2 || 0) - (selectedElement?.x1 || 0)) *
+              //     scale.w,
+              //   (selectedElement?.size || 0) * scale.w
+              // )}px`,
+              width: `50%`,
+              // height: `${Math.max(
+              //   ((selectedElement?.y2 || 0) - (selectedElement?.y1 || 0)) * 1.2,
+              //   (selectedElement?.size || 0) * 3 + 20
+              // )}px`,
+              height: `${(selectedElement?.size || 0) * 10 * 1.2}px`,
               margin: 0,
               padding: 0,
               border: 0,
@@ -604,21 +680,24 @@ const Paint = forwardRef<any, Props>(
           />
         ) : null}
         <canvas
-          className="canvas"
+          className={`canvas ${tool === "mouse" && "showMouse"}`}
           ref={canvasRef}
-          onPointerDown={(e) => startDrawing(e)}
-          onPointerUp={(e) => endDrawing(e)}
+          onPointerDown={(e) => start_mouse(e)}
+          onPointerUp={(e) => end_mouse(e)}
           onPointerEnter={() => setOnCanvas(true)}
           onPointerLeave={(e) => {
-            endDrawing(e);
+            end_mouse(e);
             setOnCanvas(false);
           }}
           onDoubleClick={(e) => handleOnDoubleClick(e)}
-          style={{ display: "auto" }}
-          onPointerMove={(e) => draw(e)}
+          style={{ display: "auto", pointerEvents: "auto" }}
+          onPointerMove={(e) => draw_mouse(e)}
+          onTouchMove={(e) => draw_pen(e)}
+          onTouchStart={(e) => start_pen(e)}
+          onTouchEnd={(e) => end_pen(e)}
         />
 
-        {tool !== "text" && (
+        {tool !== "text" && tool !== "mouse" && (
           <MouseSVG
             canvas={canvasRef.current}
             size={

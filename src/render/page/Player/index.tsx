@@ -1,47 +1,32 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, To } from "react-router-dom";
 import { useDataContext } from "../../../hook/UpdateContext";
 import Video from "../../Comp/Video";
 import Canvas from "../../Comp/Canvas";
 import ToolBar from "../../Comp/Canvas/toolBar";
-import { CaptureDraw, CompositeImages } from "./util/capture";
 import { handleSaveImages } from "./util/saveCaputure";
-import { useLocation } from "react-router-dom";
-import { onCheckOpen } from "../../../hook/useListener";
-import { hasAnyHistory } from "../../../hook/api";
-
-import {
-  FaAngleLeft,
-  FaAngleRight,
-  FaAnglesLeft,
-  FaAnglesRight,
-} from "react-icons/fa6";
-import { isErr, path2VideoType } from "../../../hook/api";
-
-interface Size {
-  w: number;
-  h: number;
-}
+import { onCheckOpen, onCheckOpenHistory } from "../../../hook/useListener";
+import { openFileFolder, handleDrop } from "../../../hook/useLoadFileFolder";
+import { IoArrowBack } from "react-icons/io5";
 
 const Player = () => {
-  // const location = useLocation();
-  // const state = location.state?.res;
-
   const {
+    setLoad,
     curVideo,
-    setCurVideo,
     windowSize,
     setWindowSize,
-    setVideoList,
-    setInputPath,
     videoMarkers,
     setVideoMarkers,
     editVideoMetaCache,
-    __initVideoMarkers__,
+    initVideoMarkers,
     editMovPathCache,
+    outputFileName,
+    outputFrameOffset,
+    context,
   } = useDataContext();
 
   const navigate = useNavigate();
+
   const handleTop = () => {
     navigate("/");
   };
@@ -59,8 +44,11 @@ const Player = () => {
   const videoRef: any = useRef(null);
   const canvasRef: any = useRef(null);
 
+  const outerRef = useRef<HTMLDivElement | null>(null);
+
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const [canDelete, setCanDelete] = useState(false);
 
   const [markers, setMarkers] = useState<Marker>(videoMarkers[curVideo.path]);
   const [curFrame, setCurFrame] = useState<number>(1);
@@ -69,43 +57,53 @@ const Player = () => {
 
   const path = editMovPathCache("get", curVideo.path) || curVideo.path;
 
-  const seekUp = (ref: any) => ref.current?.seekUp();
-  const seekDown = (ref: any) => ref.current?.seekDown();
-  const seekToTop = (ref: any) => ref.current?.seekToTop();
-  const seekToLast = (ref: any) => ref.current?.seekToLast();
-
-  // useEffect(() => {
-  //   if (curVideo.path in videoMarkers) return;
-  //   setVideoMarkers(curVideo.path, {});
-  // }, []);
+  useEffect(() => {
+    setLoad(false);
+  }, [curVideo]);
 
   useEffect(() => {
     const handleResize = (size: Electron.Rectangle) => {
       setWindowSize(size);
-      videoRef.current?.setWidth(size.width - 100);
-      canvasRef.current?.setSize({
-        w: size.width - 100,
-        h: (size.width - 100) * (sizeRef.current.h / sizeRef.current.w),
-      });
+      setSize();
     };
 
-    const setSize = async () => {
+    const setSize = () => {
+      if (outerRef.current) {
+        const outerAsp =
+          outerRef.current.clientWidth / outerRef.current.clientHeight;
+        const videoAsp = sizeRef.current.w / sizeRef.current.h;
+
+        if (videoAsp >= outerAsp) {
+          videoRef.current.setWidth(outerRef.current?.clientWidth);
+          canvasRef.current.setSize({
+            w: outerRef.current.clientWidth,
+            h: (outerRef.current?.clientWidth || 100) / videoAsp,
+          });
+        } else {
+          const wid = outerRef.current?.clientHeight * videoAsp;
+          videoRef.current.setWidth(wid);
+          canvasRef.current.setSize({
+            w: wid,
+            h: (wid || 100) / videoAsp,
+          });
+        }
+      }
+    };
+
+    const initSize = async () => {
       const size = await window.electron.getWindowSize();
       setWindowSize(size);
-      videoRef.current?.setWidth(size.width - 100);
-      canvasRef.current?.setSize({
-        w: size.width - 100,
-        h: (size.width - 100) * (sizeRef.current.h / sizeRef.current.w),
-      });
+      setSize();
     };
-    setSize();
+
+    initSize();
 
     const removeListener = window.electron.onWindowResize(handleResize);
 
     return () => {
       removeListener();
     };
-  }, [videoRef, canvasRef]);
+  }, [videoRef, canvasRef, outerRef]);
 
   useEffect(() => {
     const saveImage = async () => {
@@ -115,7 +113,11 @@ const Player = () => {
         sizeRef.current,
         fpsRef.current
       );
-      window.electron.saveCompositeImages(markersRender);
+      window.electron.saveCompositeImages(
+        markersRender,
+        outputFileName,
+        outputFrameOffset
+      );
     };
     const removeListener = window.electron.onSaveImages(() => saveImage());
 
@@ -124,7 +126,7 @@ const Player = () => {
     return () => {
       removeListener();
     };
-  }, [markers]);
+  }, [markers, outputFileName, outputFrameOffset]);
 
   const handleSetMarkers = () => {
     setVideoMarkers(curVideo.path, markers);
@@ -144,6 +146,8 @@ const Player = () => {
           index: 0,
         });
       }
+
+      setCanDelete(videoMarkers[curVideo.path][curFrame] ? true : false);
     }
   }, [curFrame]);
 
@@ -162,6 +166,7 @@ const Player = () => {
       ...pre,
       [frame]: [history, index, size || markers[frame][2] || { w: 0, h: 0 }],
     }));
+    setCanDelete(true);
   };
 
   const handleRemoveMarker = () => {
@@ -176,97 +181,22 @@ const Player = () => {
       delete newDict[curFrame]; // 指定されたキーを削除
       return newDict; // 新しい状態を返す
     });
+    setCanDelete(false);
   };
 
-  const enterFilePath = async (p: string) => {
-    try {
-      setVideoList([]);
-      setInputPath("");
-      __initVideoMarkers__();
+  onCheckOpenHistory(
+    (p: Path, id: OpenFileFolderType) => openFileFolder(id, context, p),
+    context
+  );
 
-      const cache = editVideoMetaCache("get", p);
-      if (!cache) {
-        const res = await window.electron.getVideoMeta(p);
-        const size: Size = {
-          w: res.streams[0].width,
-          h: res.streams[0].height,
-        };
-        const str = res.streams[0].r_frame_rate;
-        const parts = str.split("/");
-        const fps: FPS =
-          parts.length === 2 ? Number(parts[0]) / Number(parts[1]) : NaN;
-        editVideoMetaCache("add", p, [size, fps]);
-      }
+  onCheckOpen((id: OpenFileFolderType) => openFileFolder(id, context), context);
 
-      const video = path2VideoType(p);
-      setCurVideo(video);
+  const getDirectory = () => {
+    const parts = curVideo.path.split("\\");
+    const _parts = parts.pop();
+    const str = parts.join("/");
 
-      navigate("/", { state: { reload: true } });
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
-
-  const enterFolderPath = async (p: string) => {
-    try {
-      const res = await window.electron.getVideoList(p);
-      if (isErr(res)) return;
-      setVideoList(res);
-      setInputPath(p);
-      __initVideoMarkers__();
-
-      navigate("/");
-    } catch (error) {
-      console.error("Error:", error);
-    }
-  };
-
-  // onOpenFile(enterFilePath);
-  // onOpenFolder(enterFolderPath);
-
-  const openFileFolder = async (id: "openFile" | "openDirectory") => {
-    const res = await checkDialog();
-
-    if (res === "yes") {
-      const res = await window.electron.openFileFolder(id);
-      if (id === "openFile") {
-        enterFilePath(res);
-      } else {
-        enterFolderPath(res);
-      }
-    }
-  };
-
-  const checkDialog = async () => {
-    let response: "yes" | "no" = "yes";
-    console.log(videoMarkers);
-    if (hasAnyHistory(videoMarkers)) {
-      const userConfirmed = confirm("現在の描画履歴を削除しますか？");
-      response = userConfirmed ? "yes" : "no";
-    }
-
-    return response;
-  };
-
-  onCheckOpen(openFileFolder);
-
-  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-
-    const res = await checkDialog();
-    if (res === "no") return;
-
-    const item = event.dataTransfer.items[0];
-    const entry = item.webkitGetAsEntry();
-    if (!entry) return;
-    const filepath = window.electron.showFilePath(event.dataTransfer.files[0]);
-    console.log(filepath);
-
-    if (entry.isFile) {
-      enterFilePath(filepath);
-    } else if (entry.isDirectory) {
-      enterFolderPath(filepath);
-    }
+    return str + "/";
   };
 
   return (
@@ -276,62 +206,47 @@ const Player = () => {
         onDragOver={(e) => {
           e.preventDefault();
         }}
-        onDrop={(e) => handleDrop(e)}
+        onDrop={(e) => handleDrop(e, context)}
       >
-        <button onClick={() => handleTop()}>back</button>
-
+        <div className="player-head">
+          <button className="back-button" onClick={() => handleTop()}>
+            <IoArrowBack size={"2.5rem"} />
+          </button>
+          <div className="video-path-wrapper">
+            <div className="video-path">{getDirectory()}</div>
+            <div className="video-name">{curVideo.name}</div>
+          </div>
+        </div>
         <div className="player-wrapper">
           <div className="tool-bar-outer">
             <ToolBar
               pRef={canvasRef}
               canUndo={canUndo}
               canRedo={canRedo}
+              canDelete={canDelete}
               removeMarker={handleRemoveMarker}
             />
           </div>
-          <div className="canvas-video">
-            <div className="canvas-wrapper">
-              <Canvas
-                baseSize={sizeRef.current}
-                setCanUndo={setCanUndo}
-                setCanRedo={setCanRedo}
-                onDraw={handleAddMarker}
-                ref={canvasRef}
-              />
-            </div>
-            <div className="video-container">
-              <Video
-                // path={curVideo.path}
-                path={path}
-                size={windowSize.width}
-                onSeek={handleSeekFrame}
-                markers={markers}
-                fps={fpsRef.current}
-                ref={videoRef}
-              />
-
-              <div className="button-wrapper">
-                <button
-                  className="seekButton"
-                  onClick={() => seekToTop(videoRef)}
-                >
-                  <FaAnglesLeft size={"1.5rem"} />
-                </button>
-                <button
-                  className="seekButton"
-                  onClick={() => seekDown(videoRef)}
-                >
-                  <FaAngleLeft size={"1.5rem"} />
-                </button>
-                <button className="seekButton" onClick={() => seekUp(videoRef)}>
-                  <FaAngleRight size={"1.5rem"} />
-                </button>
-                <button
-                  className="seekButton"
-                  onClick={() => seekToLast(videoRef)}
-                >
-                  <FaAnglesRight size={"1.5rem"} />
-                </button>
+          <div className="canvas-video" ref={outerRef}>
+            <div className="canvas-video-inner">
+              <div className="canvas-wrapper">
+                <Canvas
+                  baseSize={sizeRef.current}
+                  setCanUndo={setCanUndo}
+                  setCanRedo={setCanRedo}
+                  onDraw={handleAddMarker}
+                  ref={canvasRef}
+                />
+              </div>
+              <div className="video-container">
+                <Video
+                  path={path}
+                  size={windowSize.width}
+                  onSeek={handleSeekFrame}
+                  markers={markers}
+                  fps={fpsRef.current}
+                  ref={videoRef}
+                />
               </div>
             </div>
           </div>

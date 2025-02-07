@@ -1,15 +1,14 @@
 import { StrokeOptions } from "perfect-freehand";
+import { Location } from "react-router-dom";
 export interface IElectronAPI {
   showFilePath: (e: File) => string;
-  updateMenu: (e: string) => void;
+  updateMenu: (e: string, a: Path[], b: Path[]) => void;
   getWindowSize: () => Promise<Electron.Rectangle>;
   onWindowResize: (callback: (size: Electron.Rectangle) => void) => () => void;
   onCheckOpen: (
-    callback: (id: "openFile" | "openDirectory") => void
+    callback: (id: OpenFileFolderType) => Promise<void>
   ) => () => void;
   openFileFolder: (id: "openFile" | "openDirectory") => Promise<string>;
-  // onOpenFile: (callback: (path: string) => void) => () => void;
-  // onOpenFolder: (callback: (path: string) => void) => () => void;
   getVideoMeta: (e: string) => Promise<any | Err>;
   getVideoList: (e: string) => Promise<Video[] | Err>;
   getThumbnail: (e: string) => Promise<string | Err>;
@@ -21,8 +20,12 @@ export interface IElectronAPI {
     a: string,
     b: PaintData[]
   ) => Promise<{ [key: number]: string }>;
-  saveCompositeImages: (a: MarkersRender) => void;
+  saveCompositeImages: (a: MarkersRender, b: string, c: number) => void;
   MOV2MP4: (e: Path) => Promise<Path>;
+  onOpenSetting: (callback: () => void) => () => void;
+  onOpenFile: (
+    callback: (p: Path, id: OpenFileFolderType) => Promise<void>
+  ) => () => void;
 }
 
 type Weaken<T, K extends keyof T> = {
@@ -39,6 +42,10 @@ declare global {
   type Frame = number;
   type Time = number;
   type FPS = number;
+
+  type CacheMode = "add" | "get" | "remove" | "clear";
+
+  type OpenFileFolderType = "openFile" | "openDirectory";
 
   interface Size {
     w: number;
@@ -62,7 +69,7 @@ declare global {
     wordList: string[];
   }
 
-  type PaintToolName = "pen" | "eraser" | "text" | "clear";
+  type PaintToolName = "pen" | "eraser" | "text" | "clear" | "mouse";
 
   interface PaintToolConfig {
     size: number;
@@ -118,6 +125,28 @@ declare global {
     date: string | null;
     check: string | null;
   }
+
+  type ContextType = {
+    setLoad: (e: boolean) => void;
+    initVideoMarkers: (p: string, v: Video | null, vv: Video[]) => void;
+    videoMarkers: Markers;
+    editVideoMetaCache: editVideoMetaCache;
+    editMovPathCache: editMovPathCache;
+    navi: (to: String, reload: Boolean) => void;
+    loc: Location<any> | null;
+  };
+
+  type editVideoMetaCache = (
+    mode: CacheMode,
+    key: string,
+    value?: [Size, FPS]
+  ) => [Size, FPS] | null;
+
+  type editMovPathCache = (
+    mode: CacheMode,
+    key: string,
+    value?: string
+  ) => string | null;
 
   interface Succ {
     success: string;

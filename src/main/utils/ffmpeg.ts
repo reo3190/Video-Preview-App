@@ -1,9 +1,7 @@
-import { exec, spawn } from "child_process";
+import { spawn } from "child_process";
 import path from "path";
-import fs from "fs";
 import { app } from "electron";
 import { isErr } from "../../hook/api";
-import { error } from "console";
 
 const basePath = app.isPackaged
   ? path.join(process.resourcesPath)
