@@ -26,6 +26,12 @@ const temp = fs.mkdtempSync(os.tmpdir() + "/_video-preview-app-");
 
 autoUpdater.autoInstallOnAppQuit = false;
 
+app.setAboutPanelOptions({
+  applicationName: "[SBL]Video Preview App", // アプリ名
+  applicationVersion: app.getVersion(), // アプリのバージョン
+  iconPath: "assets/icon.ico",
+});
+
 const isDebug =
   process.env.NODE_ENV === "development" || process.env.DEBUG_PROD === "true";
 
@@ -42,6 +48,8 @@ app.whenReady().then(async () => {
       //   : path.join(__dirname, "../../.erb/dll/preload.js"),
     },
   });
+
+  // mainWindow.setTitle("[SBL] Video Preview App");
   mainWindow.setAspectRatio(1.5);
 
   if (isDebug) {
