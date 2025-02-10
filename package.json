@@ -21,6 +21,7 @@
     ]
   },
   "build": {
+    "productName": "SBL-VideoPreviewApp",
     "appId": "com.sublimation.video-preview-app",
     "directories": {
       "output": "build"
