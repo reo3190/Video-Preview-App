@@ -75,6 +75,8 @@ app.whenReady().then(async () => {
   ipcMain.on(
     "update-menu",
     (_, page: String, files: Path[], folders: Path[]) => {
+      const filePaths = getMenuPath(files, mainWindow, "openFile");
+      const folderPaths = getMenuPath(folders, mainWindow, "openDirectory");
       const fileMenu = [
         {
           label: "開く",
@@ -94,21 +96,9 @@ app.whenReady().then(async () => {
             {
               label: "履歴",
               submenu: [
-                ...files.map((file) => ({
-                  label: file,
-                  click: () =>
-                    mainWindow.webContents.send("open-path", file, "openFile"),
-                })),
+                ...filePaths,
                 { label: "--------------", enabled: false },
-                ...folders.map((folder) => ({
-                  label: folder,
-                  click: () =>
-                    mainWindow.webContents.send(
-                      "open-path",
-                      folder,
-                      "openDirectory"
-                    ),
-                })),
+                ...folderPaths,
               ],
             },
           ],
@@ -261,6 +251,25 @@ const selectDialog = async (
   }
 
   return result.filePaths[0];
+};
+
+const getMenuPath = (
+  paths: Path[],
+  mainWindow: BrowserWindow,
+  id: OpenFileFolderType
+): {
+  label: string;
+  click: () => void;
+}[] => {
+  const ret = paths
+    .filter((path) => fs.existsSync(path)) // 存在するパスのみ残す
+    .slice(0, 10) // 最大10件までに制限
+    .map((path) => ({
+      label: path,
+      click: () => mainWindow.webContents.send("open-path", path, id),
+    }));
+
+  return ret;
 };
 
 //  /$$$$$$$$ /$$$$$$$   /$$$$$$
