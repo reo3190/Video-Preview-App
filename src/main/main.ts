@@ -97,7 +97,10 @@ app.whenReady().then(async () => {
               label: "履歴",
               submenu: [
                 ...filePaths,
-                { label: "--------------", enabled: false },
+                {
+                  label: "───────────────",
+                  enabled: false,
+                },
                 ...folderPaths,
               ],
             },

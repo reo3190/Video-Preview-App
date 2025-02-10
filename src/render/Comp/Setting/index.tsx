@@ -58,7 +58,7 @@ const Setting: FC<Props> = ({ setStting }) => {
                 />
                 <div>.png</div>
               </div>
-              <div>### → 001</div>
+              <div>フレーム数挿入 : ### → 001</div>
             </div>
           </div>
           <div className="frame-offset">
