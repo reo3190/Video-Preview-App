@@ -1,6 +1,6 @@
 {
   "name": "video-preview-app",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "main": "dist/main.js",
   "scripts": {
     "dev": "rimraf dist && run-p dev:webpack dev:electron",
@@ -38,7 +38,8 @@
       }
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "artifactName": "${productName}-SetUp-v${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
