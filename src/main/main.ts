@@ -255,16 +255,6 @@ const selectDialog = async (
   return result.filePaths[0];
 };
 
-// const onOpenFile = async (mainWindow: BrowserWindow) => {
-//   const res = await selectDialog("openFile");
-//   mainWindow.webContents.send("open-file", res);
-// };
-
-// const onOpenFolder = async (mainWindow: BrowserWindow) => {
-//   const res = await selectDialog("openDirectory");
-//   mainWindow.webContents.send("open-folder", res);
-// };
-
 //  /$$$$$$$$ /$$$$$$$   /$$$$$$
 // |__  $$__/| $$__  $$ /$$___ $$
 //    | $$   | $$  | $$| $$   \_/
