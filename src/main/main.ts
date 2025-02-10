@@ -67,7 +67,7 @@ app.whenReady().then(async () => {
   ipcMain.on(
     "update-menu",
     (_, page: String, files: Path[], folders: Path[]) => {
-      const base = [
+      const fileMenu = [
         {
           label: "開く",
           submenu: [
@@ -106,6 +106,27 @@ app.whenReady().then(async () => {
           ],
         },
       ];
+
+      const helpMenu = [
+        {
+          label: "情報",
+          submenu: [
+            {
+              label: "仕様書",
+              click() {
+                shell.openExternal(
+                  "https://docs.google.com/document/d/14vYzHRcwSt6ENXp_PLFH5c5PQCTyWTPwJal_5KWObBE/edit?usp=sharing"
+                );
+              },
+            },
+            {
+              label: `v ${app.getVersion()}`,
+              enabled: false,
+            },
+          ],
+        },
+      ];
+
       const getTemplate = () => {
         switch (page) {
           case "/":
@@ -154,7 +175,11 @@ app.whenReady().then(async () => {
       };
       const template = getTemplate();
 
-      const menu = Menu.buildFromTemplate([...base, ...template]);
+      const menu = Menu.buildFromTemplate([
+        ...fileMenu,
+        ...template,
+        ...helpMenu,
+      ]);
       Menu.setApplicationMenu(menu);
     }
   );

@@ -91,7 +91,9 @@ const Top = () => {
         onDrop={(e) => handleDrop(e, context)}
       >
         <FormTop />
-        <button onClick={() => ___reset()}>reset</button>
+        {process.env.NODE_ENV === "development" && (
+          <button onClick={() => ___reset()}>reset</button>
+        )}
         <VideoList />
       </div>
     </>
