@@ -1,6 +1,6 @@
 {
   "name": "video-preview-app",
-  "version": "0.0.15",
+  "version": "0.0.20",
   "main": "dist/main.js",
   "scripts": {
     "dev": "rimraf dist && run-p dev:webpack dev:electron",

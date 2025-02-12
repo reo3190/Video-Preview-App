@@ -74,7 +74,12 @@ export const handleDrop = async (
   const item = event.dataTransfer.items[0];
   const entry = item.webkitGetAsEntry();
   if (!entry) return;
-  const filepath = window.electron.showFilePath(event.dataTransfer.files[0]);
+  const filepath = window.electron.showFilePath(
+    event.dataTransfer.files[0],
+    entry.isFile
+  );
+
+  if (!filepath) return;
 
   if (entry.isFile) {
     enterFilePath(filepath, context);

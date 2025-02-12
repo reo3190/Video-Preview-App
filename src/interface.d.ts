@@ -1,7 +1,7 @@
 import { StrokeOptions } from "perfect-freehand";
 import { Location } from "react-router-dom";
 export interface IElectronAPI {
-  showFilePath: (e: File) => string;
+  showFilePath: (e: File, f: Boolean) => string | null;
   updateMenu: (e: string, a: Path[], b: Path[]) => void;
   getWindowSize: () => Promise<Electron.Rectangle>;
   onWindowResize: (callback: (size: Electron.Rectangle) => void) => () => void;

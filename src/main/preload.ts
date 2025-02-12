@@ -26,8 +26,20 @@ const electronHandler = {
     },
   },
 
-  showFilePath: (file: File) => {
-    return webUtils.getPathForFile(file);
+  showFilePath: (file: File, isFile: Boolean) => {
+    const p = webUtils.getPathForFile(file);
+    if (isFile) {
+      const allowedExtensions = ["mp4", "mov"];
+      const ext = p.split(".").pop()?.toLowerCase();
+
+      if (!ext || !allowedExtensions.includes(ext)) {
+        return null;
+      }
+
+      return p;
+    } else {
+      return p;
+    }
   },
 
   updateMenu: (menuItems: string, files: Path[], folders: Path[]) =>
