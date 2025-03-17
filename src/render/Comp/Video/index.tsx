@@ -28,6 +28,7 @@ const Video = forwardRef<any, Props>(
     // const { currentTime, setCurrentTime } = useDataContext();
     const currentTime = 10;
     const setCurrentTime = () => {};
+    const encodedUrl = path.replace(/#/g, "%23");
     const baseOptions = {
       controls: true,
       controlBar: {
@@ -52,7 +53,7 @@ const Video = forwardRef<any, Props>(
       sources: [
         {
           // src: "",
-          src: `file://${path}`,
+          src: "file://" + encodedUrl,
           type: "video/mp4",
         },
       ],

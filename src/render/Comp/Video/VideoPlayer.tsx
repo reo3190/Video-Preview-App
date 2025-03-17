@@ -103,6 +103,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     }, [options, curVideo?.path]);
 
     const __init__ = (videoElement: HTMLElement) => {
+      console.log(options.sources);
       const player = (playerRef.current = videojs(videoElement, options));
 
       player.on("seeking", () => {
