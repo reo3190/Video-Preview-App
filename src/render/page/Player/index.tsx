@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate, To } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useDataContext } from "../../../hook/UpdateContext";
 import Video from "../../Comp/Video";
 import Canvas from "../../Comp/Canvas";
@@ -8,21 +8,28 @@ import { handleSaveImages } from "./util/saveCaputure";
 import { onCheckOpen, onCheckOpenHistory } from "../../../hook/useListener";
 import { openFileFolder, handleDrop } from "../../../hook/useLoadFileFolder";
 import { IoArrowBack } from "react-icons/io5";
+import { LuSquareChevronRight, LuSquareChevronLeft } from "react-icons/lu";
+import { loadFile } from "../../../hook/api";
 
 const Player = () => {
   const {
     setLoad,
     curVideo,
+    setCurVideo,
     windowSize,
     setWindowSize,
+    editVideoList,
+    setEditVideoList,
     videoMarkers,
     setVideoMarkers,
     editVideoMetaCache,
-    initVideoMarkers,
     editMovPathCache,
     outputFileName,
     outputFrameOffset,
     context,
+    tab,
+    filteredVideoList,
+    filteredEditVideoList,
   } = useDataContext();
 
   const navigate = useNavigate();
@@ -54,8 +61,16 @@ const Player = () => {
   const [curFrame, setCurFrame] = useState<number>(1);
   const sizeRef = useRef<Size>(metaData[0]);
   const fpsRef = useRef<number>(metaData[1]);
+  const seqMarker = useRef<Marker | null>(curVideo.seq || null);
+  const seqVideos = useRef<string[] | null>(curVideo.seqVideo || null);
 
   const path = editMovPathCache("get", curVideo.path) || curVideo.path;
+
+  const [hoverItem, setHoverItem] = useState<{
+    e: string | null;
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     setLoad(false);
@@ -108,6 +123,7 @@ const Player = () => {
   useEffect(() => {
     const saveImage = async () => {
       const markersRender: MarkersRender = await handleSaveImages(
+        curVideo.name,
         markers,
         curVideo.path,
         sizeRef.current,
@@ -162,10 +178,17 @@ const Player = () => {
   ) => {
     videoRef.current?.addMarker();
     const frame = videoRef.current.getCurrentFrame();
-    setMarkers((pre) => ({
-      ...pre,
-      [frame]: [history, index, size || markers[frame][2] || { w: 0, h: 0 }],
-    }));
+    setMarkers((pre) => {
+      const newDict = { ...pre };
+      if (Object.keys(newDict).length === 0 && !curVideo.seq) {
+        setEditVideoList([curVideo, ...editVideoList]);
+      }
+
+      return {
+        ...pre,
+        [frame]: [history, index, size || markers[frame][2] || { w: 0, h: 0 }],
+      };
+    });
     setCanDelete(true);
   };
 
@@ -179,6 +202,15 @@ const Player = () => {
     setMarkers((pre) => {
       const newDict = { ...pre }; // オブジェクトをコピー
       delete newDict[curFrame]; // 指定されたキーを削除
+
+      if (Object.keys(newDict).length === 0) {
+        setEditVideoList(
+          editVideoList.filter((e) => {
+            return e != curVideo;
+          })
+        );
+      }
+
       return newDict; // 新しい状態を返す
     });
     setCanDelete(false);
@@ -192,11 +224,55 @@ const Player = () => {
   onCheckOpen((id: OpenFileFolderType) => openFileFolder(id, context), context);
 
   const getDirectory = () => {
-    const parts = curVideo.path.split("\\");
-    const _parts = parts.pop();
-    const str = parts.join("/");
+    if (seqVideos.current) {
+      if (seqVideos.current.length > 2) {
+        const first = seqVideos.current[0];
+        const last = seqVideos.current[seqVideos.current.length - 1];
+        return "[ " + first + " ~ " + last + " ]";
+      } else {
+        return "[ " + seqVideos.current.join(" , ") + " ]";
+      }
+    } else {
+      const parts = curVideo.path.split("\\");
+      const str = parts.join("/");
 
-    return str + "/";
+      return str + "/";
+    }
+  };
+
+  function getNextElement(target: Video, offset: number) {
+    const arr =
+      tab == "FOLDER"
+        ? filteredVideoList
+        : tab == "EDIT"
+        ? filteredEditVideoList
+        : [];
+    const index = arr.indexOf(target);
+    const next = index + offset;
+    if (index !== -1 && 0 <= next && next < arr.length) {
+      return arr[next];
+    }
+    return null; // 次の要素がない場合
+  }
+
+  const hoverNextBack = (
+    el: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    offset: number
+  ) => {
+    const e = getNextElement(curVideo, offset);
+    if (e) {
+      setHoverItem({ e: e.name, x: el.clientX, y: el.clientY });
+    }
+  };
+
+  const loadNextBack = async (offset: number) => {
+    const video = getNextElement(curVideo, offset);
+    if (video) {
+      setLoad(true);
+      await loadFile(editVideoMetaCache, editMovPathCache, video);
+      setCurVideo(video);
+      context.navi("/", true);
+    }
   };
 
   return (
@@ -212,6 +288,40 @@ const Player = () => {
           <button className="back-button" onClick={() => handleTop()}>
             <IoArrowBack size={"2.5rem"} />
           </button>
+          <div className="back-next">
+            <button
+              className="back-video"
+              onClick={() => loadNextBack(-1)}
+              onMouseEnter={(el) => hoverNextBack(el, -1)}
+              onMouseMove={(el) => hoverNextBack(el, -1)}
+              onMouseLeave={(el) => setHoverItem(null)}
+              disabled={getNextElement(curVideo, -1) ? false : true}
+            >
+              <LuSquareChevronLeft size={"2.5rem"} />
+            </button>
+            <button
+              className="next-video"
+              onClick={() => loadNextBack(1)}
+              onMouseEnter={(el) => hoverNextBack(el, 1)}
+              onMouseMove={(el) => hoverNextBack(el, 1)}
+              onMouseLeave={(el) => setHoverItem(null)}
+              disabled={getNextElement(curVideo, 1) ? false : true}
+            >
+              <LuSquareChevronRight size={"2.5rem"} />
+            </button>
+
+            {hoverItem?.e && (
+              <div
+                className={`hover-tip`}
+                style={{
+                  left: hoverItem.x + 10,
+                  top: hoverItem.y + 10,
+                }}
+              >
+                {hoverItem.e}
+              </div>
+            )}
+          </div>
           <div className="video-path-wrapper">
             <div className="video-path">{getDirectory()}</div>
             <div className="video-name">{curVideo.name}</div>
@@ -245,6 +355,8 @@ const Player = () => {
                   onSeek={handleSeekFrame}
                   markers={markers}
                   fps={fpsRef.current}
+                  seq={seqMarker.current}
+                  seqVideos={seqVideos.current}
                   ref={videoRef}
                 />
               </div>

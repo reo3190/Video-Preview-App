@@ -4,18 +4,13 @@ import React, {
   useRef,
   useEffect,
   useState,
-  useLayoutEffect,
 } from "react";
 import videojs from "video.js";
-// import Popcorn from "popcorn";
-// import * as Popcorn from 'popcorn';
 import { VideoFrame } from "./VideoFrame";
 import Player from "video.js/dist/types/player";
-import { num2date, frame2time, time2frame, round } from "../../../hook/api";
+import { frame2time, time2frame, round } from "../../../hook/api";
 import { useDataContext } from "../../../hook/UpdateContext";
 import VideoUI from "./VideoUI";
-
-// const fps = 24;
 
 interface VideoPlayerProps {
   currentTime: number;
@@ -29,6 +24,9 @@ interface VideoPlayerProps {
   fps: number;
   seekDownMarker: () => void;
   seekUpMarker: () => void;
+  playlist: videojsSource[] | null;
+  seqMarker: Marker | null;
+  seqVideos: string[] | null;
 }
 
 // 公開するメソッドの型
@@ -43,28 +41,34 @@ export interface VideoPlayerHandle {
 const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   (
     {
-      currentTime,
       onTimeUpdate,
-      setCurrentTime,
       onPlay,
       onPause,
       options,
       onSeek,
-      markers,
       fps,
       seekDownMarker,
       seekUpMarker,
+      seqMarker,
+      seqVideos,
     },
     ref
   ) => {
-    const { curVideo, videoMarkers } = useDataContext();
+    const {
+      curVideo,
+      videoMarkers,
+      masterVolume,
+      setMasterVolume,
+      muted,
+      setMuted,
+    } = useDataContext();
     if (!curVideo) return;
 
     const videoRef = useRef<HTMLDivElement | null>(null);
     const playerRef = useRef<Player | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const frameRef = useRef<number>(0);
-    const [frame, setFrame] = useState<number>(1);
+    const [currFrame, setCurrFrame] = useState<number>(1);
     const [allFrame, setAllFrame] = useState<number>(1);
 
     const v = videoMarkers[curVideo.path];
@@ -103,16 +107,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     }, [options, curVideo?.path]);
 
     const __init__ = (videoElement: HTMLElement) => {
-      console.log(options.sources);
       const player = (playerRef.current = videojs(videoElement, options));
 
-      player.on("seeking", () => {
-        if (onTimeUpdate) {
-          // onTimeUpdate(player.currentTime());
-        } else {
-          // setCurrentTime(player.currentTime());
-        }
-      });
+      // player.on("seeking", () => {});
 
       player.on("play", () => {
         setIsPlaying(true);
@@ -126,7 +123,11 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         if (onPause) {
           onPause();
         }
-        // setCurrentTime(player.currentTime());
+      });
+
+      player.on("volumechange", function () {
+        setMasterVolume(player.volume() || 1.0);
+        setMuted(player.muted() || false);
       });
 
       // player.on("timeupdate", () => {
@@ -138,7 +139,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         frameRate: fps,
         callback: (frame: number) => {
           frameRef.current = frame;
-          setFrame(round(frame));
+          setCurrFrame(round(frame));
           setSlider(frame);
           onSeek(frameRef.current);
         },
@@ -151,7 +152,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         if (!p) return;
 
         for (var i = 0; i < markerFrames.length; i++) {
-          makeMarkerElement(p, markerFrames[i]);
+          makeMarkerElement(p, markerFrames[i], "paint");
         }
 
         const el = document.createElement("div");
@@ -163,6 +164,37 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         p.append(el);
 
         setAllFrame(_total_float);
+
+        if (seqMarker && seqVideos) {
+          console.log(seqMarker);
+          const seqFrames = Object.keys(seqMarker || {}).map(Number);
+          seqFrames.sort((a, b) => a - b);
+
+          for (var i = 0; i < seqFrames.length; i++) {
+            const className = i % 2 == 0 ? "odd" : "eve";
+            if (i + 1 >= seqFrames.length) {
+              makeSequenceElement(
+                p,
+                seqVideos[i],
+                className,
+                seqFrames[i],
+                _total_float
+              );
+            } else {
+              makeSequenceElement(
+                p,
+                seqVideos[i],
+                className,
+                seqFrames[i],
+                seqFrames[i + 1] - 1
+              );
+            }
+          }
+        }
+
+        // ------
+        player.volume(masterVolume);
+        player.muted(muted);
       });
     };
 
@@ -237,7 +269,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     };
 
     const getCurrentFrame = (): number => {
-      return frame;
+      return currFrame;
     };
 
     const setCurrentFrame = (frame: number): void => {
@@ -252,7 +284,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       setMarkerFrames((pre) => [...pre, frame]);
       const p = getProgressBarElement();
       if (p) {
-        makeMarkerElement(p, frame);
+        makeMarkerElement(p, frame, "paint");
       }
     };
 
@@ -263,13 +295,22 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       removeMarkerElement(frame);
     };
 
-    const makeMarkerElement = (p: Element, frame: number) => {
+    const makeMarkerElement = (
+      p: Element,
+      frame: number,
+      type: "paint" | "seq"
+    ) => {
       if (!playerRef.current) return null;
       const totalTime = playerRef.current.duration() || 1;
       const total_float = totalTime * fps;
       const left = (frame / total_float) * 100;
       const el = document.createElement("div");
-      el.className = "vjs-marker";
+      el.className =
+        type == "paint"
+          ? "vjs-marker"
+          : type == "seq"
+          ? "vjs-seq-marker"
+          : "err";
       const wid = (1 / total_float) * 100;
       el.style.left = left - wid + "%";
       el.style.width = wid + "%";
@@ -282,6 +323,42 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (!playerRef.current) return;
       const el = document.querySelector(`[data-time="${frame}"]`);
       el?.remove();
+    };
+
+    const makeSequenceElement = (
+      p: Element,
+      popupText: string,
+      className: string,
+      start: number,
+      end: number
+    ) => {
+      if (!playerRef.current) return null;
+      const totalTime = playerRef.current.duration() || 1;
+      const total_float = totalTime * fps;
+      const left = (start / total_float) * 100;
+      const el = document.createElement("div");
+      el.className = `vjs-seq-marker ${className}`;
+      const wid = ((end - start) / total_float) * 100;
+      const _wid = (1 / total_float) * 100;
+      // const wid = 5;
+
+      el.style.left = left - _wid + "%";
+      el.style.width = wid + _wid + "%";
+      el.style.minWidth = "5px";
+      // el.setAttribute("data-time", String(frame));
+
+      const popup = document.createElement("div");
+      popup.className = "vjs-seq-marker-popup";
+      popup.textContent = popupText;
+      if (left <= 50) {
+        popup.style.left = "0";
+      } else {
+        popup.style.right = "0";
+      }
+
+      el.appendChild(popup);
+
+      p.append(el);
     };
 
     const getProgressBarElement = (): Element | null => {
@@ -322,7 +399,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       seekDown: () => seekDown(),
       seekToTop: () => playerRef.current?.currentTime(0),
       seekToLast: () => {
-        const d = allFrame - frame;
+        const d = allFrame - currFrame;
         for (let i = 0; i < d; i++) {
           seekUp();
         }
@@ -344,16 +421,14 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           <div ref={videoRef} />
         </div>
         <VideoUI
-          path=""
           fps={round(fps)}
-          frame={frame}
+          frame={currFrame}
           allFrame={allFrame}
           isPlay={isPlaying}
           seekDownMarker={seekDownMarker}
           seekUpMarker={seekUpMarker}
           ref={ref}
         />
-        {/* <div id="currentFrame">{frame}</div> */}
       </>
     );
   }

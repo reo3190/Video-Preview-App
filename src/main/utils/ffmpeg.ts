@@ -19,6 +19,8 @@ const getVideoMeta = (videoPath: string): Promise<any | Err> => {
       "v:0",
       "-show_entries",
       "stream=width,height,r_frame_rate",
+      "-show_entries",
+      "format=duration",
       "-of",
       "json",
       videoPath,
@@ -289,6 +291,52 @@ const convertMOVtoMP4 = async (
   });
 };
 
+const createSequence = async (
+  textPath: Path,
+  savePath: Path
+): Promise<Succ | Err> => {
+  return new Promise((resolve, reject) => {
+    const command = spawn(ffmpegPath, [
+      "-f",
+      "concat",
+      "-safe",
+      "0",
+      "-i",
+      textPath,
+      "-c",
+      "copy",
+      savePath,
+    ]);
+
+    let errorOutput = "";
+
+    command.stdout.on("data", (data) => {
+      console.log(`stdout: ${data}`);
+    });
+
+    command.stderr.on("data", (data) => {
+      errorOutput += data.toString(); // エラーのデータを蓄積
+      console.error(`stderr: ${data}`);
+    });
+
+    command.on("close", (code) => {
+      if (code === 0) {
+        const succ: Succ = { success: "" };
+        resolve(succ);
+      } else {
+        console.error(errorOutput);
+        const err: Err = { error: "", errorcode: "" };
+        reject(err);
+      }
+    });
+
+    command.on("error", (error) => {
+      const err: Err = { error: "", errorcode: "" };
+      reject(err);
+    });
+  });
+};
+
 export {
   getVideoMeta,
   getVideoDuration,
@@ -296,4 +344,5 @@ export {
   generateThumbnail,
   getCaputureData,
   convertMOVtoMP4,
+  createSequence,
 };

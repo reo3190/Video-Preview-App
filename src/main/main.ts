@@ -9,11 +9,13 @@ import {
   generateThumbnails,
   getCaputureData,
   convertMOVtoMP4,
+  createSequence,
 } from "./utils/ffmpeg";
 import { isErr } from "../hook/api";
 import { getVideoList } from "./utils/video";
 import os from "os";
-const temp = fs.mkdtempSync(os.tmpdir() + "/_video-preview-app-");
+const tempName = "_video-preview-app-";
+const temp = fs.mkdtempSync(`${os.tmpdir()}/${tempName}`);
 
 //  /$$   /$$  /$$$$$$  /$$$$$$$$ /$$   /$$
 // | $$$ /$$$ /$$__  $$|__  $$__/| $$$ | $$
@@ -96,12 +98,13 @@ app.whenReady().then(async () => {
             {
               label: "履歴",
               submenu: [
-                ...filePaths,
+                ...folderPaths,
+
                 {
                   label: "───────────────",
                   enabled: false,
                 },
-                ...folderPaths,
+                ...filePaths,
               ],
             },
           ],
@@ -117,6 +120,14 @@ app.whenReady().then(async () => {
               click() {
                 shell.openExternal(
                   "https://docs.google.com/document/d/14vYzHRcwSt6ENXp_PLFH5c5PQCTyWTPwJal_5KWObBE/edit?usp=sharing"
+                );
+              },
+            },
+            {
+              label: "リリースノート",
+              click() {
+                shell.openExternal(
+                  "https://docs.google.com/document/d/12hY9ZCxzecBJ0xf84Qmzb5B1HMy9fXDy627zxR3SK1A/edit?usp=sharing"
                 );
               },
             },
@@ -197,6 +208,14 @@ app.on("will-quit", () => {
       fs.rmSync(temp, { recursive: true, force: true });
       console.log(`Temporary directory ${temp} deleted successfully.`);
     }
+
+    fs.readdirSync(os.tmpdir()).forEach((file) => {
+      const filePath = path.join(os.tmpdir(), file);
+
+      if (file.startsWith(tempName) && fs.statSync(filePath).isDirectory()) {
+        fs.rmSync(filePath, { recursive: true, force: true });
+      }
+    });
   } catch (err) {
     console.error(`Failed to delete temporary directory ${temp}:`, err);
   }
@@ -268,7 +287,7 @@ const getMenuPath = (
     .filter((path) => fs.existsSync(path)) // 存在するパスのみ残す
     .slice(0, 10) // 最大10件までに制限
     .map((path) => ({
-      label: path,
+      label: path.replace(/\\/g, "/"),
       click: () => mainWindow.webContents.send("open-path", path, id),
     }));
 
@@ -355,28 +374,28 @@ ipcMain.handle(
       const saveDir = await selectDialog("openDirectory");
       const reg = /#+/g;
 
-      for (const [videoPath, marker] of Object.entries(data)) {
-        const videoName = path.basename(videoPath, path.extname(videoPath));
+      for (const [videoName, marker] of Object.entries(data)) {
+        // const videoName = path.basename(videoPath, path.extname(videoPath));
 
         const folderPath = path.join(saveDir, videoName);
         fs.mkdirSync(folderPath, { recursive: true });
 
         for (const [key, base64] of Object.entries(marker)) {
           const frame = Number(key) + offset;
-          let name = String(frame);
+          let imgName = String(frame);
           if (!isEmptyOrWhitespace(filename)) {
             if (reg.test(filename)) {
-              name = filename.replace(reg, (match) => {
+              imgName = filename.replace(reg, (match) => {
                 const numLength = match.length;
                 const numberStr = String(frame).padStart(numLength, "0");
                 return numberStr;
               });
             } else {
-              name = filename + String(frame);
+              imgName = filename + String(frame);
             }
           }
 
-          const filePath = path.join(folderPath, `${name}.png`);
+          const filePath = path.join(folderPath, `${imgName}.png`);
 
           const base64Data = base64.split(",")[1]; // data:image/png;base64, を除去
           const buffer = Buffer.from(base64Data, "base64");
@@ -410,3 +429,68 @@ ipcMain.handle("mov-to-mp4", async (_, videoPath: string): Promise<Path> => {
     return saveFile;
   }
 });
+
+const generateRandomName = () => {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+};
+
+ipcMain.handle(
+  "list-to-sequence",
+  async (
+    _,
+    nameList: string[],
+    list: string[],
+    name: string,
+    metaList: (Meta | null)[]
+  ): Promise<Video | Err> => {
+    // const videoName = path.basename(videoPath, path.extname(videoPath));
+    const fileName = generateRandomName();
+    const saveFolder = path.join(temp, "_sequence", fileName);
+    const saveFile = path.join(saveFolder, `seq.mp4`);
+    const saveText = path.join(saveFolder, "list.txt");
+
+    if (!fs.existsSync(saveFolder)) {
+      fs.mkdirSync(saveFolder, { recursive: true });
+    }
+
+    const text = list
+      .map((item) => `file '${item.replace(/\\/g, "/")}'`)
+      .join("\n");
+    try {
+      fs.writeFileSync(saveText, text);
+    } catch (err) {
+      const ret: Err = { error: "", errorcode: "" };
+      return ret;
+    }
+
+    let timeline = 1;
+    const marker: Marker = {};
+    metaList.forEach((e, i) => {
+      if (e) {
+        marker[timeline] = [[[]], 0, { w: 0, h: 0 }];
+        const total = e[2] * e[1];
+        timeline += total;
+      }
+    });
+
+    // const nameList = list.map((e) => {
+    //   return path.basename(e);
+    // });
+
+    const ret = await createSequence(saveText, saveFile);
+    if (isErr(ret)) {
+      return ret;
+    } else {
+      const video: Video = {
+        name: name,
+        path: saveFile,
+        extension: ".mp4",
+        directory: ["sequence"],
+        seq: marker,
+        seqVideo: nameList,
+      };
+
+      return video;
+    }
+  }
+);

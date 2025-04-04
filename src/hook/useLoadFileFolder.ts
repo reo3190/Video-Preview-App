@@ -4,7 +4,7 @@ const enterFilePath = async (p: string, context: ContextType) => {
   try {
     const {
       setLoad,
-      initVideoMarkers,
+      initVideoList,
       editVideoMetaCache,
       editMovPathCache,
       navi,
@@ -16,7 +16,7 @@ const enterFilePath = async (p: string, context: ContextType) => {
 
     setLoad(true);
     await loadFile(editVideoMetaCache, editMovPathCache, video);
-    initVideoMarkers(p, video, [video]);
+    initVideoList(p, video, [video]);
     if ((loc.pathname = "/play")) {
       navi("/", true);
     } else {
@@ -28,25 +28,31 @@ const enterFilePath = async (p: string, context: ContextType) => {
 };
 
 const enterFolderPath = async (p: string, context: ContextType) => {
+  context.setLoad(true);
   const res = await window.electron.getVideoList(p);
   if (isErr(res)) return;
-  context.initVideoMarkers(p, null, res);
+  res.sort((x, y) => x.name.localeCompare(y.name));
+
+  context.initVideoList(p, null, res);
   context.navi("/", false);
+  context.setLoad(false);
+  context.setTab("FOLDER");
 };
 
-const checkDialog = async (videoMarkers: Markers) => {
-  if (hasAnyHistory(videoMarkers)) {
-    return confirm("現在の描画履歴を削除しますか？") ? "yes" : "no";
-  }
-  return "yes";
-};
+// const checkDialog = async (videoMarkers: Markers) => {
+//   if (hasAnyHistory(videoMarkers)) {
+//     return confirm("現在の描画履歴を削除しますか？") ? "yes" : "no";
+//   }
+//   return "yes";
+// };
 
 export const openFileFolder = async (
   id: OpenFileFolderType,
   context: ContextType,
   p: Path | null = null
 ) => {
-  const res = await checkDialog(context.videoMarkers);
+  // const res = await checkDialog(context.videoMarkers);
+  const res = "yes";
   if (res === "yes") {
     let path = p;
     if (!path) {
@@ -68,9 +74,6 @@ export const handleDrop = async (
 ) => {
   event.preventDefault();
 
-  const res = await checkDialog(context.videoMarkers);
-  if (res === "no") return;
-
   const item = event.dataTransfer.items[0];
   const entry = item.webkitGetAsEntry();
   if (!entry) return;
@@ -80,6 +83,9 @@ export const handleDrop = async (
   );
 
   if (!filepath) return;
+
+  // const res = await checkDialog(context.videoMarkers);
+  // if (res === "no") return;
 
   if (entry.isFile) {
     enterFilePath(filepath, context);

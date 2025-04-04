@@ -1,3 +1,4 @@
+import { type } from "os";
 import { StrokeOptions } from "perfect-freehand";
 import { Location } from "react-router-dom";
 export interface IElectronAPI {
@@ -26,6 +27,12 @@ export interface IElectronAPI {
   onOpenFile: (
     callback: (p: Path, id: OpenFileFolderType) => Promise<void>
   ) => () => void;
+  list2sequence: (
+    a: string[],
+    b: string[],
+    c: string,
+    d: (Meta | null)[]
+  ) => Promise<Video | Err>;
 }
 
 type Weaken<T, K extends keyof T> = {
@@ -47,6 +54,8 @@ declare global {
 
   type OpenFileFolderType = "openFile" | "openDirectory";
 
+  type TabType = "FOLDER" | "EDIT";
+
   interface Size {
     w: number;
     h: number;
@@ -57,7 +66,11 @@ declare global {
     path: string;
     extension: string;
     directory: string[];
-    // thumbnail: string;
+    //paint
+    // paintNum: number;
+    // sequence
+    seq?: Marker;
+    seqVideo?: string[];
   }
 
   interface Filter {
@@ -65,6 +78,13 @@ declare global {
     dateList: string[];
     check: string;
     checkList: string[];
+    wordInput: string;
+    wordList: string[];
+  }
+
+  type Filter4EditParts = "paint" | "seq" | "all";
+  interface Filter4Edit {
+    select: Filter4EditParts;
     wordInput: string;
     wordList: string[];
   }
@@ -113,7 +133,7 @@ declare global {
   type Markers = Record<Path, Marker>;
 
   type MarkerRender = Record<Frame, Base64>;
-  type MarkersRender = Record<Path, MarkerRender>;
+  type MarkersRender = Record<string, MarkerRender>;
 
   interface PaintData {
     frame: number;
@@ -128,25 +148,33 @@ declare global {
 
   type ContextType = {
     setLoad: (e: boolean) => void;
-    initVideoMarkers: (p: string, v: Video | null, vv: Video[]) => void;
+    initVideoList: (p: string, v: Video | null, vv: Video[]) => void;
     videoMarkers: Markers;
     editVideoMetaCache: editVideoMetaCache;
     editMovPathCache: editMovPathCache;
     navi: (to: String, reload: Boolean) => void;
     loc: Location<any> | null;
+    setCurVideo: (e: Video | null) => void;
+    setTab: (e: TabType) => void;
   };
+
+  type Meta = [Size, FPS, number];
 
   type editVideoMetaCache = (
     mode: CacheMode,
     key: string,
-    value?: [Size, FPS]
-  ) => [Size, FPS] | null;
+    value?: Meta
+  ) => Meta | null;
 
   type editMovPathCache = (
     mode: CacheMode,
     key: string,
     value?: string
   ) => string | null;
+
+  type videojsSource = {
+    sources: [{ src: Path; type: string }];
+  };
 
   interface Succ {
     success: string;

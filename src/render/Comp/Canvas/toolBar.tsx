@@ -1,10 +1,5 @@
 import React, { useEffect, useState, useRef, FC } from "react";
-import {
-  PiPencilSimpleLine,
-  PiEraser,
-  PiTextT,
-  PiWaveSineBold,
-} from "react-icons/pi";
+import { PiPencilSimpleLine, PiEraser, PiTextT } from "react-icons/pi";
 import {
   IoArrowUndo,
   IoArrowRedo,
@@ -14,7 +9,6 @@ import {
 import { LuMousePointer2 } from "react-icons/lu";
 import { MdOpacity, MdDelete } from "react-icons/md";
 import { VscTextSize } from "react-icons/vsc";
-import { LuCircleDot } from "react-icons/lu";
 import { useDataContext } from "../../../hook/UpdateContext";
 
 interface Props {

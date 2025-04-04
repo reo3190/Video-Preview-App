@@ -1,14 +1,19 @@
 import React, { useEffect, useState } from "react";
-import FormTop from "../../Comp/FormTop";
+import FormTop from "./comp/FormTop";
 import VideoList from "../../Comp/VideoList";
 import { useDataContext } from "../../../hook/UpdateContext";
 import { handleSaveAllImages } from "./util/saveAllCaputure";
 import { onCheckOpen, onCheckOpenHistory } from "../../../hook/useListener";
 import { openFileFolder, handleDrop } from "../../../hook/useLoadFileFolder";
 import { useNavigate, useLocation, To } from "react-router-dom";
+import { loadFile, getVideoIndex } from "../../../hook/api";
+
+import { FaFolder } from "react-icons/fa";
+import { RiEditBoxLine } from "react-icons/ri";
 
 const Top = () => {
   const {
+    tab,
     setLoad,
     windowSize,
     setWindowSize,
@@ -17,17 +22,40 @@ const Top = () => {
     outputFileName,
     outputFrameOffset,
     context,
+    filteredVideoList,
+    filteredEditVideoList,
+    curVideo,
+    curPage,
+    curPageEdit,
+    editVideoList,
+    setCurPage,
+    setCurPageEdit,
+    setTab,
+    setCurVideo,
+    editVideoMetaCache,
+    editMovPathCache,
   } = useDataContext();
 
+  const itemsPerPage = 20;
   const location = useLocation();
   const navigate = useNavigate();
 
+  const [mask, setMask] = useState<Boolean>(true);
+
   useEffect(() => {
-    if (location.state) {
-      if (location.state.reload) {
-        navigate("/play");
-      }
+    if (location.state && location.state.reload) {
+      navigate("/play");
+    } else {
+      setMask(false);
     }
+    // const indexVideo = curVideo
+    //   ? tab == "FOLDER"
+    //     ? getVideoIndex(curVideo, filteredVideoList)
+    //     : tab == "EDIT"
+    //     ? getVideoIndex(curVideo, filteredEditVideoList)
+    //     : null
+    //   : null;
+    // setCurPage(indexVideo ? Math.floor(indexVideo / itemsPerPage) : curPage);
 
     setLoad(false);
 
@@ -52,7 +80,15 @@ const Top = () => {
 
   useEffect(() => {
     const saveImage = async () => {
+      const nameList: Record<Path, string> = {};
+      Object.keys(videoMarkers).map((key) => {
+        const video = editVideoList.filter((e) => {
+          return e.path == key;
+        });
+        nameList[key] = video[0].name;
+      });
       const markersRender: MarkersRender = await handleSaveAllImages(
+        nameList,
         videoMarkers,
         videoMetaCache
       );
@@ -75,27 +111,74 @@ const Top = () => {
 
   onCheckOpen((id: OpenFileFolderType) => openFileFolder(id, context), context);
 
-  const ___reset = () => {
-    localStorage.setItem("openFile", "");
-    localStorage.setItem("openDirectory", "");
-    console.log("reset");
+  // const ___reset = () => {
+  //   localStorage.setItem("openFile", "");
+  //   localStorage.setItem("openDirectory", "");
+  //   console.log("reset");
+  // };
+
+  const handlePlay = async (e: any, video: Video) => {
+    setLoad(true);
+    await loadFile(editVideoMetaCache, editMovPathCache, video);
+    setCurVideo(video);
+    navigate("/play");
   };
 
   return (
     <>
-      <div
-        className="window"
-        onDragOver={(e) => {
-          e.preventDefault();
-        }}
-        onDrop={(e) => handleDrop(e, context)}
-      >
-        <FormTop />
-        {process.env.NODE_ENV === "development" && (
-          <button onClick={() => ___reset()}>reset</button>
-        )}
-        <VideoList />
-      </div>
+      {!mask && (
+        <div
+          className="window top"
+          onDragOver={(e) => {
+            e.preventDefault();
+          }}
+          onDrop={(e) => handleDrop(e, context)}
+        >
+          <div className="tab-side">
+            <div
+              className={`tab-item ${tab == "FOLDER" ? "active" : ""}`}
+              onClick={() => setTab("FOLDER")}
+            >
+              <FaFolder size={"2rem"} />
+            </div>
+            <div
+              className={`tab-item ${tab == "EDIT" ? "active" : ""}`}
+              onClick={() => setTab("EDIT")}
+            >
+              <RiEditBoxLine size={"2rem"} />
+            </div>
+          </div>
+          <div className="list-side">
+            <FormTop itemsPerPage={itemsPerPage} />
+            {tab == "FOLDER" ? (
+              <>
+                {/* {process.env.NODE_ENV === "development" && (
+                <button onClick={() => ___reset()}>reset</button>
+              )} */}
+                <VideoList
+                  list={filteredVideoList}
+                  curPage={curPage}
+                  setCurPage={setCurPage}
+                  itemsPerPage={itemsPerPage}
+                  handleClick={handlePlay}
+                />
+              </>
+            ) : tab == "EDIT" ? (
+              <>
+                <VideoList
+                  list={filteredEditVideoList}
+                  curPage={curPageEdit}
+                  setCurPage={setCurPageEdit}
+                  itemsPerPage={itemsPerPage}
+                  handleClick={handlePlay}
+                />
+              </>
+            ) : (
+              <></>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 };

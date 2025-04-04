@@ -176,6 +176,22 @@ const electronHandler = {
       ipcRenderer.removeListener("open-path", listener);
     };
   },
+
+  list2sequence: async (
+    nameList: string[],
+    list: string[],
+    name: string,
+    metaList: (Meta | null)[]
+  ): Promise<Video | Err> => {
+    const response = await ipcRenderer.invoke(
+      "list-to-sequence",
+      nameList,
+      list,
+      name,
+      metaList
+    );
+    return response;
+  },
 };
 
 contextBridge.exposeInMainWorld("electron", electronHandler);

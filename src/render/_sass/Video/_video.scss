@@ -61,10 +61,50 @@
   background: #3693fd;
   opacity: 0.9;
   // width: 5px;
-  height: 30px;
+  height: 28px;
   top: -100%;
   z-index: 30;
   // margin-left: -3px;
+}
+
+.vjs-seq-marker {
+  position: absolute;
+  // background: #ff9595cc;
+  // opacity: 0.9;
+  // width: 5px;
+  height: 40px;
+  top: -150%;
+  z-index: 40;
+  // margin-left: -3px;
+
+  &.odd {
+    background: #66666655;
+  }
+
+  &.eve {
+    background: #aaaaaa55;
+  }
+
+  &:hover {
+    .vjs-seq-marker-popup {
+      opacity: 1;
+    }
+  }
+
+  .vjs-seq-marker-popup {
+    position: absolute;
+    top: -25px;
+    // right: 0;
+    padding: 5px;
+    min-width: 50px;
+    font-size: 1.2rem;
+    border-radius: 3px;
+    background: #000;
+
+    opacity: 0;
+
+    pointer-events: none;
+  }
 }
 
 // .vjs-marker:hover span {

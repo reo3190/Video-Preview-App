@@ -7,9 +7,7 @@ import React, {
   useImperativeHandle,
   useLayoutEffect,
 } from "react";
-import { useSpring, animated as a, SpringValue } from "react-spring";
 import MouseSVG from "./mouseSVG";
-// import usePressedKeys from "../../../hook/usePressedKeys";
 import useHistory from "./utils/useHistory";
 import {
   createElement,
@@ -20,7 +18,6 @@ import {
   positionWithinElement,
   cursorForPosition,
 } from "./utils/positionUtils";
-import { useDataContext } from "../../../hook/UpdateContext";
 
 interface Props {
   baseSize: Size;

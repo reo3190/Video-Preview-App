@@ -1,9 +1,9 @@
-import { time2frame, frame2time, round } from "../../../hook/api";
+import { time2frame } from "../../../hook/api";
 
 type VideoFrameOptions = {
   id?: string;
   frameRate?: number;
-  callback?: (frame: number) => void; // コールバック関数の型指定
+  callback?: (frame: number) => void;
 };
 
 class VideoFrame {

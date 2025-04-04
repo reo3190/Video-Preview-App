@@ -6,6 +6,7 @@ import {
   ReactNode,
   useEffect,
 } from "react";
+import { FaLess } from "react-icons/fa";
 import { useNavigate, useLocation, To } from "react-router-dom";
 // ---------------------------------------------------------
 
@@ -16,26 +17,39 @@ interface DataContext {
   setLoad: (e: boolean) => void;
   inputPath: string;
   setInputPath: (e: string) => void;
+  tab: TabType;
+  setTab: (e: TabType) => void;
+  //Folder
   filter: Filter;
   setFilter: (update: Partial<Filter>) => void;
   videoList: Video[];
   setVideoList: (e: Video[]) => void;
   filteredVideoList: Video[];
   setFilteredVideoList: (e: Video[]) => void;
+  //Edit
+  filter4edit: Filter4Edit;
+  setFilter4Edit: (update: Partial<Filter4Edit>) => void;
+  editVideoList: Video[];
+  setEditVideoList: (e: Video[]) => void;
+  filteredEditVideoList: Video[];
+  setFilteredEditVideoList: (e: Video[]) => void;
+  //
   curPage: number;
   setCurPage: (e: number) => void;
+  curPageEdit: number;
+  setCurPageEdit: (e: number) => void;
   curVideo: Video | null;
   setCurVideo: (e: Video | null) => void;
   lastLoad: number;
   setLastLoad: (e: number) => void;
   imgCache: Map<string, string>;
   editImgCache: (mode: CacheMode, key: string, value?: string) => string | null;
-  videoMetaCache: Map<string, [Size, FPS]>;
+  videoMetaCache: Map<string, [Size, FPS, number]>;
   editVideoMetaCache: (
     mode: CacheMode,
     key: string,
-    value?: [Size, FPS]
-  ) => [Size, FPS] | null;
+    value?: [Size, FPS, number]
+  ) => [Size, FPS, number] | null;
   paintTool: PaintTool;
   setPaintTool: (tool: PaintToolName, update: Partial<PaintToolConfig>) => void;
   activePaintTool: PaintToolName;
@@ -44,7 +58,9 @@ interface DataContext {
   setPaintConfig: (update: Partial<PaintConfig>) => void;
   videoMarkers: Markers;
   setVideoMarkers: (path: string, marker: Marker) => void;
-  initVideoMarkers: (p: string, v: Video | null, vv: Video[]) => void;
+  initVideoMarker: () => void;
+  resetVideoMarker: (p: string) => void;
+  initVideoList: (p: string, v: Video | null, vv: Video[]) => void;
   movPathCache: Map<string, string>;
   editMovPathCache: (
     mode: CacheMode,
@@ -56,6 +72,10 @@ interface DataContext {
   outputFrameOffset: number;
   setOutputFrameOffset: (e: number) => void;
   context: ContextType;
+  masterVolume: number;
+  setMasterVolume: (e: number) => void;
+  muted: boolean;
+  setMuted: (e: boolean) => void;
 }
 
 const defaultContext: DataContext = {
@@ -64,8 +84,9 @@ const defaultContext: DataContext = {
   load: false,
   setLoad: () => {},
   inputPath: "",
-  // inputPath: "",
   setInputPath: () => {},
+  tab: "FOLDER",
+  setTab: () => {},
   filter: {
     date: "all",
     dateList: [],
@@ -79,15 +100,27 @@ const defaultContext: DataContext = {
   setVideoList: () => {},
   filteredVideoList: [],
   setFilteredVideoList: () => {},
+  filter4edit: {
+    select: "all",
+    wordInput: "",
+    wordList: [],
+  },
+  setFilter4Edit: () => {},
+  editVideoList: [],
+  setEditVideoList: () => {},
+  filteredEditVideoList: [],
+  setFilteredEditVideoList: () => {},
   curPage: 0,
   setCurPage: () => {},
+  curPageEdit: 0,
+  setCurPageEdit: () => {},
   curVideo: null,
   setCurVideo: () => {},
   lastLoad: 0,
   setLastLoad: () => {},
   imgCache: new Map<string, string>(),
   editImgCache: () => null,
-  videoMetaCache: new Map<string, [Size, FPS]>(),
+  videoMetaCache: new Map<string, [Size, FPS, number]>(),
   editVideoMetaCache: () => null,
   paintTool: {
     pen: { size: 10, color: "#000000", opacity: 1 },
@@ -103,7 +136,9 @@ const defaultContext: DataContext = {
   setPaintConfig: () => {},
   videoMarkers: {},
   setVideoMarkers: () => {},
-  initVideoMarkers: () => {},
+  initVideoMarker: () => {},
+  resetVideoMarker: () => {},
+  initVideoList: () => {},
   movPathCache: new Map<string, string>(),
   editMovPathCache: () => null,
   outputFileName: "",
@@ -112,13 +147,19 @@ const defaultContext: DataContext = {
   setOutputFrameOffset: () => {},
   context: {
     setLoad: () => {},
-    initVideoMarkers: () => {},
+    initVideoList: () => {},
     videoMarkers: {},
     editVideoMetaCache: () => null,
     editMovPathCache: () => null,
     navi: () => {},
     loc: null,
+    setCurVideo: () => {},
+    setTab: () => {},
   },
+  masterVolume: 1,
+  setMasterVolume: () => {},
+  muted: false,
+  setMuted: () => {},
 };
 
 const datactx = createContext<DataContext>(defaultContext);
@@ -131,18 +172,33 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   );
   const [load, setLoad] = useState<boolean>(defaultContext.load);
   const [inputPath, setInputPath] = useState<string>(defaultContext.inputPath);
+  const [tab, setTab] = useState<TabType>(defaultContext.tab);
   const [filter, setFilter] = useState<Filter>(defaultContext.filter);
   const [videoList, setVideoList] = useState<Video[]>(defaultContext.videoList);
   const [filteredVideoList, setFilteredVideoList] = useState<Video[]>(
     defaultContext.filteredVideoList
   );
+  const [filter4edit, setFilter4Edit] = useState<Filter4Edit>(
+    defaultContext.filter4edit
+  );
+  const [editVideoList, setEditVideoList] = useState<Video[]>(
+    defaultContext.editVideoList
+  );
+  const [filteredEditVideoList, setFilteredEditVideoList] = useState<Video[]>(
+    defaultContext.filteredEditVideoList
+  );
   const [curPage, setCurPage] = useState<number>(defaultContext.curPage);
+  const [curPageEdit, setCurPageEdit] = useState<number>(
+    defaultContext.curPageEdit
+  );
   const [curVideo, setCurVideo] = useState<Video | null>(
     defaultContext.curVideo
   );
   const [lastLoad, setLastLoad] = useState<number>(defaultContext.lastLoad);
   const imgCache = useState<Map<string, string>>(new Map())[0];
-  const videoMetaCache = useState<Map<string, [Size, FPS]>>(new Map())[0];
+  const videoMetaCache = useState<Map<string, [Size, FPS, number]>>(
+    new Map()
+  )[0];
   const [paintTool, setPaintTool] = useState<PaintTool>(
     defaultContext.paintTool
   );
@@ -164,6 +220,12 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   );
   const [context, setContext] = useState<ContextType>(defaultContext.context);
 
+  const [masterVolume, setMasterVolume] = useState<number>(
+    defaultContext.masterVolume
+  );
+
+  const [muted, setMuted] = useState<boolean>(defaultContext.muted);
+
   const updateWindowSize = useCallback((size: Electron.Rectangle): void => {
     setWindowSize(size);
   }, []);
@@ -174,6 +236,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const updateInputPath = useCallback((path: string): void => {
     setInputPath(path);
+  }, []);
+
+  const updateTab = useCallback((e: TabType): void => {
+    setTab(e);
   }, []);
 
   const updateFilter = useCallback((update: Partial<Filter>): void => {
@@ -192,8 +258,30 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setFilteredVideoList(e);
   }, []);
 
+  const updateFiltere4Edit = useCallback(
+    (update: Partial<Filter4Edit>): void => {
+      setFilter4Edit((prev) => ({
+        ...prev,
+        ...update,
+      }));
+    },
+    []
+  );
+
+  const updateEditVideoList = useCallback((e: Video[]): void => {
+    setEditVideoList(e);
+  }, []);
+
+  const updateFilteredEditVideoList = useCallback((e: Video[]): void => {
+    setFilteredEditVideoList(e);
+  }, []);
+
   const updateCurPage = useCallback((e: number): void => {
     setCurPage(e);
+  }, []);
+
+  const updateCurPageEdit = useCallback((e: number): void => {
+    setCurPageEdit(e);
   }, []);
 
   const updateCurVideo = useCallback((e: Video | null): void => {
@@ -225,7 +313,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const editVideoMetaCache = useCallback(
-    (mode: CacheMode, key: string, value?: [Size, FPS]): [Size, FPS] | null => {
+    (
+      mode: CacheMode,
+      key: string,
+      value?: [Size, FPS, number]
+    ): [Size, FPS, number] | null => {
       switch (mode) {
         case "add":
           if (!value) return null;
@@ -269,14 +361,29 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const updateVideoMarkers = useCallback((path: string, marker: Marker) => {
-    setVideoMarkers((pre) => ({ ...pre, [path]: marker }));
+    setVideoMarkers((pre) => {
+      return { ...pre, [path]: marker };
+    });
   }, []);
 
-  const initVideoMarkers = useCallback(
+  const initVideoMarker = useCallback(() => setVideoMarkers({}), []);
+
+  const resetVideoMarker = useCallback(
+    (path: string) =>
+      setVideoMarkers((pre) => {
+        const newDict = { ...pre };
+        delete newDict[path];
+        return newDict;
+      }),
+    []
+  );
+
+  const initVideoList = useCallback(
     (p: string, v: Video | null, vv: Video[]) => {
-      setVideoMarkers({});
+      // setVideoMarkers({});
       setInputPath(p);
       setCurVideo((pre) => (v ? v : pre));
+      setCurPage(0);
       setVideoList(vv);
       // alert("これは警告メッセージです！");
     },
@@ -322,14 +429,24 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     setContext({
       setLoad: updateLoad,
-      initVideoMarkers: initVideoMarkers,
+      initVideoList: initVideoList,
       videoMarkers: videoMarkers,
       editVideoMetaCache: editVideoMetaCache,
       editMovPathCache: editMovPathCache,
       navi: navi,
       loc: location,
+      setCurVideo: updateCurVideo,
+      setTab: updateTab,
     });
   }, [videoMarkers, location]);
+
+  const updateMasterVolume = useCallback((e: number): void => {
+    setMasterVolume(e);
+  }, []);
+
+  const updateMuted = useCallback((e: boolean): void => {
+    setMuted(e);
+  }, []);
 
   return (
     <datactx.Provider
@@ -340,14 +457,24 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setLoad: updateLoad,
         inputPath,
         setInputPath: updateInputPath,
+        tab,
+        setTab: updateTab,
         filter,
         setFilter: updateFilter,
         videoList,
         setVideoList: updateVideoList,
         filteredVideoList,
         setFilteredVideoList: updateFilteredVideoList,
+        filter4edit,
+        setFilter4Edit: updateFiltere4Edit,
+        editVideoList,
+        setEditVideoList: updateEditVideoList,
+        filteredEditVideoList,
+        setFilteredEditVideoList: updateFilteredEditVideoList,
         curPage,
         setCurPage: updateCurPage,
+        curPageEdit,
+        setCurPageEdit: updateCurPageEdit,
         curVideo,
         setCurVideo: updateCurVideo,
         lastLoad,
@@ -364,7 +491,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setPaintConfig: updatePaintConfig,
         videoMarkers,
         setVideoMarkers: updateVideoMarkers,
-        initVideoMarkers,
+        initVideoMarker,
+        resetVideoMarker,
+        initVideoList,
         movPathCache,
         editMovPathCache,
         outputFileName,
@@ -372,6 +501,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         outputFrameOffset,
         setOutputFrameOffset: updateOutputFrameOffset,
         context,
+        masterVolume,
+        setMasterVolume: updateMasterVolume,
+        muted,
+        setMuted: updateMuted,
       }}
     >
       {children}

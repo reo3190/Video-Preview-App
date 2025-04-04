@@ -48,6 +48,44 @@ export const Filter = (List: Video[], Filter: Filter): Video[] => {
   return filteredList;
 };
 
+export const Filter4Edit = (
+  List: Video[],
+  Filter: Filter4Edit,
+  videoMarkers: Markers
+): Video[] => {
+  switch (Filter.select) {
+    case "all":
+      const filteredList1 = List.filter((e) => {
+        const words = includeWords(e.name, Filter.wordList);
+        return words;
+      });
+      return filteredList1;
+    case "paint":
+      const filteredList2 = List.filter((e) => {
+        const marker = videoMarkers[e.path] || {};
+        const markerCount = Object.keys(marker).length;
+        const paint = markerCount > 0;
+        const words = includeWords(e.name, Filter.wordList);
+        return paint && words;
+      });
+      return filteredList2;
+    case "seq":
+      const filteredList3 = List.filter((e) => {
+        const seq = e.seq;
+        const words = includeWords(e.name, Filter.wordList);
+        return seq && words;
+      });
+      return filteredList3;
+    case "all":
+    default:
+      const filteredList4 = List.filter((e) => {
+        const words = includeWords(e.name, Filter.wordList);
+        return words;
+      });
+      return filteredList4;
+  }
+};
+
 const includeWords = (name: string, words: string[]): boolean => {
   if (words.length === 0) {
     return true;
@@ -118,7 +156,10 @@ const mov2mp4 = async (video: Video): Promise<Path | null> => {
   return res;
 };
 
-const loadMeta = async (editVideoMetaCache: editVideoMetaCache, path: Path) => {
+export const loadMeta = async (
+  editVideoMetaCache: editVideoMetaCache,
+  path: Path
+) => {
   const cache = editVideoMetaCache("get", path);
   if (!cache) {
     const res = await window.electron.getVideoMeta(path);
@@ -127,7 +168,9 @@ const loadMeta = async (editVideoMetaCache: editVideoMetaCache, path: Path) => {
     const parts = str.split("/");
     const fps: FPS =
       parts.length === 2 ? Number(parts[0]) / Number(parts[1]) : NaN;
-    editVideoMetaCache("add", path, [size, fps]);
+    const duration_str = res.format.duration;
+    const duration: number = Number(duration_str);
+    editVideoMetaCache("add", path, [size, fps, duration]);
   }
 };
 
@@ -144,4 +187,33 @@ export const loadFile = async (
   if (movPath) {
     editMovPathCache("add", path, movPath);
   }
+};
+
+export const iList2pList = (
+  iList: number[],
+  videoList: Video[],
+  editMovPathCache: editMovPathCache
+): Path[] => {
+  const ret: Path[] = [];
+  videoList.forEach((e, i) => {
+    if (iList.includes(i)) {
+      const movPath = editMovPathCache("get", e.path);
+      if (movPath) {
+        ret.push(movPath);
+      } else {
+        ret.push(e.path);
+      }
+    }
+  });
+  return ret;
+};
+
+export const getVideoIndex = (v: Video, list: Video[]) => {
+  let ret = 0;
+  list.forEach((e, i) => {
+    if (e.path == v.path) {
+      ret = i;
+    }
+  });
+  return ret;
 };

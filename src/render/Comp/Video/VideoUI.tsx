@@ -1,7 +1,5 @@
 import React, { forwardRef } from "react";
 import "video.js/dist/video-js.css";
-import { useDataContext } from "../../../hook/UpdateContext";
-import { round } from "../../../hook/api";
 import {
   FaAnglesLeft,
   FaAnglesRight,
@@ -12,7 +10,6 @@ import {
 } from "react-icons/fa6";
 import { TbChevronLeftPipe, TbChevronRightPipe } from "react-icons/tb";
 type Props = {
-  path: Path;
   fps: FPS;
   frame: number;
   allFrame: Frame;
@@ -23,11 +20,9 @@ type Props = {
 
 const VideoUI = forwardRef<any, Props>(
   (
-    { path, fps, frame, allFrame, isPlay, seekDownMarker, seekUpMarker },
+    { fps, frame, allFrame, isPlay, seekDownMarker, seekUpMarker },
     videoRef
   ) => {
-    const { curVideo } = useDataContext();
-
     const seekUp = (ref: any) => ref.current?.seekUp();
     const seekDown = (ref: any) => ref.current?.seekDown();
     const seekToTop = (ref: any) => ref.current?.seekToTop();
@@ -77,8 +72,6 @@ const VideoUI = forwardRef<any, Props>(
             <div className="fps">{`[${fps}]`}</div>
           </div>
         </div>
-        {/* <div>{curVideo?.path.replace(/\\/g, "/")}</div>
-      <div>{round(fps)}</div> */}
       </>
     );
   }

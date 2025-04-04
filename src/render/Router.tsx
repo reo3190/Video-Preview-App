@@ -31,6 +31,7 @@ export const Router = () => {
       <Routes>
         <Route path={`/`} element={<Top />} />
         <Route path={`/play`} element={<Player />} />
+        {/* <Route path={`/edit`} element={<Player />} /> */}
       </Routes>
     </>
   );

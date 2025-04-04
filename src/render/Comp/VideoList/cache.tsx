@@ -1,24 +1,21 @@
-import React, { useRef, useEffect, useState, FC } from "react";
+import React, { useEffect, useState, FC } from "react";
 import { useDataContext } from "../../../hook/UpdateContext";
-import { useNavigate } from "react-router-dom";
-import { IoReturnDownForwardSharp } from "react-icons/io5";
 import VideoInfo from "./videoInfo";
-import { isErr, loadFile } from "../../../hook/api";
+import { isErr } from "../../../hook/api";
 import { PiPencilSimpleLine } from "react-icons/pi";
+
+import { ContextMenuTriggerArea } from "../ContextMenu/src/lib";
+import "../ContextMenu/src/ContextMenu.css";
+import VideoContextMenu from "../ContextMenu";
+import { ContextMenuBridge } from "../../../hook/ContextMenuBridge";
 
 interface Props {
   video: Video;
+  handleClick: (e: React.MouseEvent<HTMLDivElement>, v: Video) => void;
 }
 
-const CahcheVideo: FC<Props> = ({ video }) => {
-  const {
-    setLoad,
-    setCurVideo,
-    editImgCache,
-    editVideoMetaCache,
-    editMovPathCache,
-    videoMarkers,
-  } = useDataContext();
+const CahcheVideo: FC<Props> = ({ video, handleClick }) => {
+  const { editImgCache, videoMarkers } = useDataContext();
 
   const marker = videoMarkers[video.path] || {};
   const markerCount = Object.keys(marker).length;
@@ -46,32 +43,38 @@ const CahcheVideo: FC<Props> = ({ video }) => {
     setLoadingIMG(false);
   };
 
-  const navigate = useNavigate();
-  const handlePlay = async (video: Video) => {
-    setLoad(true);
-    await loadFile(editVideoMetaCache, editMovPathCache, video);
-    setCurVideo(video);
-    navigate("/play");
-  };
-
   return (
     <>
-      <div className="video-list-item">
-        {LoadingIMG && <div className="placeholder">Loading...</div>}
+      <div className={`video-list-item ${LoadingIMG ? "loading" : "loaded"}`}>
         <VideoInfo video={video} />
         {markerCount > 0 && (
           <div className="marker-count">
             <PiPencilSimpleLine size={"2.5rem"} />
           </div>
         )}
-
-        <img
-          className={`frame-image ${LoadingIMG ? "loading" : "loaded"}`}
-          src={"data:image/png;base64," + img}
-          onLoad={handleImageLoad}
-          onClick={() => handlePlay(video)}
-        />
+        <ContextMenuTriggerArea
+          bridge={ContextMenuBridge}
+          className={`context-trigger`}
+          data={{
+            img,
+            video,
+          }}
+        >
+          <div
+            className={`frame-image ${LoadingIMG ? "loading" : "loaded"}`}
+            onClick={(e) => handleClick(e, video)}
+          >
+            {LoadingIMG && <div className="placeholder">Loading...</div>}
+            <img
+              src={"data:image/png;base64," + img}
+              onLoad={handleImageLoad}
+              style={{ pointerEvents: "none" }}
+            />
+          </div>
+        </ContextMenuTriggerArea>
       </div>
+
+      <VideoContextMenu />
     </>
   );
 };

@@ -1,6 +1,6 @@
 {
   "name": "video-preview-app",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "dist/main.js",
   "scripts": {
     "dev": "rimraf dist && run-p dev:webpack dev:electron",
@@ -55,8 +55,8 @@
   },
   "description": "",
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@types/react": "^19.0.1",
+    "@types/node": "^22.13.17",
+    "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.2",
     "copy-webpack-plugin": "^12.0.2",
     "cross-env": "^7.0.3",
@@ -91,6 +91,7 @@
     "react-loader-spinner": "^6.1.6",
     "react-router-dom": "^7.1.1",
     "react-spring": "^9.7.5",
-    "video.js": "^8.21.0"
+    "video.js": "^8.21.0",
+    "videojs-playlist": "^5.2.0"
   }
 }

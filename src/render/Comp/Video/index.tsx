@@ -2,15 +2,11 @@ import React, {
   useEffect,
   useRef,
   forwardRef,
-  Ref,
   RefObject,
   useState,
 } from "react";
 import "video.js/dist/video-js.css";
 import VideoPlayer from "./VideoPlayer";
-// import Videojs from "./VideoPlayer";
-// import VideoUI from "./VideoUI";
-// import { useDataContext } from "../../hook/useContext";
 
 type Props = {
   path: string;
@@ -21,10 +17,25 @@ type Props = {
   onTimeUpdate?: (time: number) => void;
   onPlay?: () => void;
   onPause?: () => void;
+  seq: Marker | null;
+  seqVideos: string[] | null;
 };
 
 const Video = forwardRef<any, Props>(
-  ({ path, onSeek, onTimeUpdate, onPlay, onPause, markers, fps }, ref) => {
+  (
+    {
+      path,
+      onSeek,
+      onTimeUpdate,
+      onPlay,
+      onPause,
+      markers,
+      fps,
+      seq,
+      seqVideos,
+    },
+    ref
+  ) => {
     // const { currentTime, setCurrentTime } = useDataContext();
     const currentTime = 10;
     const setCurrentTime = () => {};
@@ -33,16 +44,10 @@ const Video = forwardRef<any, Props>(
       controls: true,
       controlBar: {
         children: {
-          // playToggle: {},
           progressControl: {},
-          // currentTimeDisplay: {},
-          // timeDivider: {},
-          // durationDisplay: {},
-          // remainingTimeDisplay: {},
           volumePanel: {
             inline: false,
           },
-          // fullscreenToggle: {},
         },
       },
       userActions: {
@@ -52,12 +57,10 @@ const Video = forwardRef<any, Props>(
       inactivityTimeout: 0,
       sources: [
         {
-          // src: "",
           src: "file://" + encodedUrl,
           type: "video/mp4",
         },
       ],
-      // width: size ?? 100,
       loop: true,
     };
     const [videoJsOptions, setVideoJsOptions] = useState(baseOptions);
@@ -182,8 +185,10 @@ const Video = forwardRef<any, Props>(
           fps={fps}
           seekDownMarker={seekDownMarker}
           seekUpMarker={seekUpMarker}
+          playlist={null}
+          seqMarker={seq}
+          seqVideos={seqVideos}
         />
-        {/* <VideoUI path={path} fps={fps} ref={ref} /> */}
       </>
     );
   }

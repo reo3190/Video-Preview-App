@@ -1,7 +1,8 @@
 import { CaptureDraw, CompositeImages } from "./capture";
-import { frame2time, time2frame } from "../../../../hook/api";
+import { frame2time } from "../../../../hook/api";
 
 const handleSaveImages = async (
+  name: string,
   markers: Marker,
   path: string,
   size: Size,
@@ -36,7 +37,7 @@ const handleSaveImages = async (
     return acc;
   }, {});
 
-  return { [path]: compObject };
+  return { [name]: compObject };
 };
 
 export { handleSaveImages };

@@ -1,6 +1,6 @@
 .player-head {
   display: grid;
-  grid-template-columns: 50px 1fr;
+  grid-template-columns: 50px 100px 1fr;
   justify-content: center;
   align-items: center;
   background: #333;
@@ -14,10 +14,52 @@
     display: flex;
     justify-content: center;
     align-items: center;
+
+    &:hover {
+      background: #666;
+      color: var(--video-UI-hover-tx);
+    }
+  }
+
+  .back-next {
+    margin-left: 30px;
+    grid-column: 2/3;
+    display: flex;
+    gap: 3px;
+
+    button {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      &:disabled {
+        opacity: 0.3;
+        &:hover {
+          background: none;
+          color: white;
+        }
+      }
+
+      &:hover {
+        background: #666;
+        color: var(--video-UI-hover-tx);
+      }
+    }
+
+    .hover-tip {
+      position: fixed;
+      color: #fff;
+      background: black;
+      padding: 3px 5px;
+      filter: drop-shadow(3px 3px 5px #00000091);
+
+      z-index: 5;
+    }
   }
 
   .video-path-wrapper {
-    grid-column: 2/3;
+    grid-column: 3/4;
     display: flex;
     justify-content: flex-end;
     width: 100%;

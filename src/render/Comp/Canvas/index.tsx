@@ -1,7 +1,6 @@
-import React, { useState, useEffect, FC, forwardRef } from "react";
+import React, { forwardRef } from "react";
 import { useDataContext } from "../../../hook/UpdateContext";
 import Paint from "./paint";
-import ToolBar from "./toolBar";
 
 interface Props {
   baseSize: Size;
