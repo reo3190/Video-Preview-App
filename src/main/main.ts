@@ -37,6 +37,7 @@ app.setAboutPanelOptions({
 const isDebug =
   process.env.NODE_ENV === "development" || process.env.DEBUG_PROD === "true";
 
+let mWindow: BrowserWindow | null = null;
 app.whenReady().then(async () => {
   // アプリの起動イベント発火で BrowserWindow インスタンスを作成
   const mainWindow = new BrowserWindow({
@@ -50,6 +51,8 @@ app.whenReady().then(async () => {
       //   : path.join(__dirname, "../../.erb/dll/preload.js"),
     },
   });
+
+  mWindow = mainWindow;
 
   // mainWindow.setTitle("[SBL] Video Preview App");
   mainWindow.setAspectRatio(1.5);
@@ -196,13 +199,31 @@ app.whenReady().then(async () => {
     }
   );
 
+  mainWindow.on("close", async (e) => {
+    e.preventDefault(); // 一旦閉じるのをキャンセル
+
+    // フロントに状態を問い合わせる
+    mainWindow.webContents.send("check-can-close");
+
+    // ipcMainで応答を待つ（Promiseで一時停止）
+    const canClose = await new Promise((resolve) => {
+      ipcMain.once("check-can-close-response", (event, result) => {
+        resolve(result);
+      });
+    });
+
+    if (canClose) {
+      mainWindow.destroy(); // 強制的に閉じる
+    }
+  });
+
   // レンダラープロセスをロード
   mainWindow.loadFile("dist/index.html");
 
   autoUpdater.checkForUpdatesAndNotify();
 });
 
-app.on("will-quit", () => {
+app.on("will-quit", async () => {
   try {
     if (fs.existsSync(temp)) {
       fs.rmSync(temp, { recursive: true, force: true });
@@ -374,8 +395,16 @@ ipcMain.handle(
       const saveDir = await selectDialog("openDirectory");
       const reg = /#+/g;
 
+      // const count = Object.keys(data).length;
+
+      // for (const [index, [videoName, marker]] of Object.entries(
+      //   data
+      // ).entries()) {
       for (const [videoName, marker] of Object.entries(data)) {
         // const videoName = path.basename(videoPath, path.extname(videoPath));
+        // mWindow?.setProgressBar(index / count);
+        // console.log(mWindow ? "true" : "false");
+        // mWindow?.webContents.send("task-progress", index / count);
 
         const folderPath = path.join(saveDir, videoName);
         fs.mkdirSync(folderPath, { recursive: true });

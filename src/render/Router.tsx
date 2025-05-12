@@ -7,9 +7,10 @@ import Player from "./page/Player";
 import Menu from "./Comp/Menu";
 import Loading from "./Comp/Load";
 import Setting from "./Comp/Setting";
+import { Filter4Edit } from "../hook/api";
 
 export const Router = () => {
-  const { load } = useDataContext();
+  const { load, videoList, videoMarkers } = useDataContext();
 
   const [setting, SetSetting] = useState<boolean>(false);
 
@@ -22,6 +23,30 @@ export const Router = () => {
       removeListener();
     };
   }, []);
+
+  useEffect(() => {
+    const filter: Filter4Edit = {
+      select: "paint",
+      wordInput: "",
+      wordList: [],
+    };
+
+    const removeListener = window.electron.onCheckCanClose(() => {
+      const list = Filter4Edit(videoList, filter, videoMarkers);
+      const count = list.length;
+      const shouldClose =
+        count == 0 ||
+        window.confirm("ペイントデータが残っています。終了しますか？");
+
+      window.electron.sendCloseResponse(shouldClose);
+
+      return shouldClose;
+    });
+
+    return () => {
+      removeListener();
+    };
+  }, [videoMarkers]);
 
   Menu();
   return (

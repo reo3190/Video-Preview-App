@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import FormTop from "./comp/FormTop";
 import VideoList from "../../Comp/VideoList";
+import Progress from "../../Comp/Progress";
 import { useDataContext } from "../../../hook/UpdateContext";
 import { handleSaveAllImages } from "./util/saveAllCaputure";
 import { onCheckOpen, onCheckOpenHistory } from "../../../hook/useListener";
@@ -41,6 +42,9 @@ const Top = () => {
   const navigate = useNavigate();
 
   const [mask, setMask] = useState<Boolean>(true);
+
+  const [progress, setProgress] = useState<number>(0);
+  const [done, setDone] = useState<boolean>(true);
 
   useEffect(() => {
     if (location.state && location.state.reload) {
@@ -85,18 +89,24 @@ const Top = () => {
         const video = editVideoList.filter((e) => {
           return e.path == key;
         });
-        nameList[key] = video[0].name;
+        if (video.length > 0) {
+          nameList[key] = video[0].name;
+        }
       });
+      setDone(false);
       const markersRender: MarkersRender = await handleSaveAllImages(
         nameList,
         videoMarkers,
-        videoMetaCache
+        videoMetaCache,
+        setProgress
       );
       window.electron.saveCompositeImages(
         markersRender,
         outputFileName,
         outputFrameOffset
       );
+
+      setDone(true);
     };
     const removeListener = window.electron.onSaveAllImages(() => saveImage());
     return () => {
@@ -134,48 +144,53 @@ const Top = () => {
           }}
           onDrop={(e) => handleDrop(e, context)}
         >
-          <div className="tab-side">
-            <div
-              className={`tab-item ${tab == "FOLDER" ? "active" : ""}`}
-              onClick={() => setTab("FOLDER")}
-            >
-              <FaFolder size={"2rem"} />
-            </div>
-            <div
-              className={`tab-item ${tab == "EDIT" ? "active" : ""}`}
-              onClick={() => setTab("EDIT")}
-            >
-              <RiEditBoxLine size={"2rem"} />
-            </div>
+          <div className="progress-wrapper">
+            <Progress progress={progress} done={done} />
           </div>
-          <div className="list-side">
-            <FormTop itemsPerPage={itemsPerPage} />
-            {tab == "FOLDER" ? (
-              <>
-                {/* {process.env.NODE_ENV === "development" && (
+          <div className="list-wrapper">
+            <div className="tab-side">
+              <div
+                className={`tab-item ${tab == "FOLDER" ? "active" : ""}`}
+                onClick={() => setTab("FOLDER")}
+              >
+                <FaFolder size={"2rem"} />
+              </div>
+              <div
+                className={`tab-item ${tab == "EDIT" ? "active" : ""}`}
+                onClick={() => setTab("EDIT")}
+              >
+                <RiEditBoxLine size={"2rem"} />
+              </div>
+            </div>
+            <div className="list-side">
+              <FormTop itemsPerPage={itemsPerPage} />
+              {tab == "FOLDER" ? (
+                <>
+                  {/* {process.env.NODE_ENV === "development" && (
                 <button onClick={() => ___reset()}>reset</button>
               )} */}
-                <VideoList
-                  list={filteredVideoList}
-                  curPage={curPage}
-                  setCurPage={setCurPage}
-                  itemsPerPage={itemsPerPage}
-                  handleClick={handlePlay}
-                />
-              </>
-            ) : tab == "EDIT" ? (
-              <>
-                <VideoList
-                  list={filteredEditVideoList}
-                  curPage={curPageEdit}
-                  setCurPage={setCurPageEdit}
-                  itemsPerPage={itemsPerPage}
-                  handleClick={handlePlay}
-                />
-              </>
-            ) : (
-              <></>
-            )}
+                  <VideoList
+                    list={filteredVideoList}
+                    curPage={curPage}
+                    setCurPage={setCurPage}
+                    itemsPerPage={itemsPerPage}
+                    handleClick={handlePlay}
+                  />
+                </>
+              ) : tab == "EDIT" ? (
+                <>
+                  <VideoList
+                    list={filteredEditVideoList}
+                    curPage={curPageEdit}
+                    setCurPage={setCurPageEdit}
+                    itemsPerPage={itemsPerPage}
+                    handleClick={handlePlay}
+                  />
+                </>
+              ) : (
+                <></>
+              )}
+            </div>
           </div>
         </div>
       )}

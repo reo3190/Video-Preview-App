@@ -6,9 +6,11 @@ const handleSaveImages = async (
   markers: Marker,
   path: string,
   size: Size,
-  fps: number
+  fps: number,
+  setProgress?: React.Dispatch<React.SetStateAction<number>>
 ): Promise<MarkersRender> => {
   if (!markers) return {};
+
   const frames = Object.keys(markers || {}).map(Number);
 
   const saveData = frames.map((e) => {
@@ -21,9 +23,8 @@ const handleSaveImages = async (
   });
 
   const res = await window.electron.getCaputureData(path, saveData);
-
   const comp = await Promise.all(
-    saveData.map(async (d) => {
+    saveData.map(async (d, i) => {
       const frame = d.frame;
       const base64 = await CompositeImages(res[frame], d.paint);
       return { [d.frame]: base64 }; // 各フレーム番号とbase64を持つオブジェクトを返す

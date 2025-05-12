@@ -6,7 +6,6 @@ import {
   ReactNode,
   useEffect,
 } from "react";
-import { FaLess } from "react-icons/fa";
 import { useNavigate, useLocation, To } from "react-router-dom";
 // ---------------------------------------------------------
 
@@ -56,6 +55,8 @@ interface DataContext {
   setActivePaintTool: (e: PaintToolName) => void;
   paintConfig: PaintConfig;
   setPaintConfig: (update: Partial<PaintConfig>) => void;
+  paintCopyboard: [PaintElement[][], number];
+  setPaintCopyboard: (e: [PaintElement[][], number]) => void;
   videoMarkers: Markers;
   setVideoMarkers: (path: string, marker: Marker) => void;
   initVideoMarker: () => void;
@@ -134,6 +135,8 @@ const defaultContext: DataContext = {
   setActivePaintTool: () => {},
   paintConfig: { smooth: 0, pressure: 0 },
   setPaintConfig: () => {},
+  paintCopyboard: [[[]], 0],
+  setPaintCopyboard: () => {},
   videoMarkers: {},
   setVideoMarkers: () => {},
   initVideoMarker: () => {},
@@ -208,6 +211,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [paintConfig, setPaintConfig] = useState<PaintConfig>(
     defaultContext.paintConfig
   );
+  const [paintCopyboard, setPaintCopyboard] = useState<
+    [PaintElement[][], number]
+  >(defaultContext.paintCopyboard);
   const [videoMarkers, setVideoMarkers] = useState<Record<string, Marker>>(
     defaultContext.videoMarkers
   );
@@ -360,6 +366,13 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     []
   );
 
+  const updatePaintCopyboard = useCallback(
+    (e: [PaintElement[][], number]): void => {
+      setPaintCopyboard(e);
+    },
+    []
+  );
+
   const updateVideoMarkers = useCallback((path: string, marker: Marker) => {
     setVideoMarkers((pre) => {
       return { ...pre, [path]: marker };
@@ -489,6 +502,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setActivePaintTool: updateActivePaintTool,
         paintConfig,
         setPaintConfig: updatePaintConfig,
+        paintCopyboard,
+        setPaintCopyboard: updatePaintCopyboard,
         videoMarkers,
         setVideoMarkers: updateVideoMarkers,
         initVideoMarker,

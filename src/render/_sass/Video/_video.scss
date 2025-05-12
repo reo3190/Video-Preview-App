@@ -2,6 +2,12 @@
   margin-bottom: 3rem;
 }
 
+.video-js.vjs-fullscreen {
+  .vjs-control-bar {
+    display: none !important;
+  }
+}
+
 .video-js .vjs-control-bar {
   position: fixed !important;
   bottom: 0 !important;
@@ -15,8 +21,7 @@
   display: flex !important;
 
   .vjs-play-control,
-  .vjs-remaining-time,
-  .vjs-fullscreen-control {
+  .vjs-remaining-time {
     display: none !important;
   }
 
@@ -107,6 +112,16 @@
   }
 }
 
+.vjs-trims-marker,
+.vjs-trime-marker {
+  position: absolute;
+  background: #000000;
+  opacity: 0.6;
+  height: 40px;
+  top: -150%;
+  z-index: 30;
+}
+
 // .vjs-marker:hover span {
 //   opacity: 1;
 // }
@@ -137,11 +152,17 @@
 .vjs-volume-panel.vjs-control.vjs-volume-panel-vertical {
   position: absolute !important;
   bottom: 40px !important;
-  right: 20px !important;
+  right: 50px !important;
 }
 
 .vjs-volume-control.vjs-control.vjs-volume-vertical {
   .vjs-mouse-display {
     left: -2000%;
   }
+}
+
+.vjs-fullscreen-control {
+  position: absolute !important;
+  bottom: 40px !important;
+  right: 10px !important;
 }

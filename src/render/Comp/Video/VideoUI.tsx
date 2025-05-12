@@ -8,19 +8,36 @@ import {
   FaPause,
   FaPlay,
 } from "react-icons/fa6";
-import { TbChevronLeftPipe, TbChevronRightPipe } from "react-icons/tb";
+import {
+  TbChevronLeftPipe,
+  TbChevronRightPipe,
+  TbBracketsOff,
+  TbBracketsContainStart,
+  TbBracketsContainEnd,
+} from "react-icons/tb";
 type Props = {
   fps: FPS;
   frame: number;
   allFrame: Frame;
   isPlay: boolean;
+  isSetTrimStart: Boolean;
+  isSetTrimEnd: Boolean;
   seekDownMarker: () => void;
   seekUpMarker: () => void;
 };
 
 const VideoUI = forwardRef<any, Props>(
   (
-    { fps, frame, allFrame, isPlay, seekDownMarker, seekUpMarker },
+    {
+      fps,
+      frame,
+      allFrame,
+      isPlay,
+      isSetTrimStart,
+      isSetTrimEnd,
+      seekDownMarker,
+      seekUpMarker,
+    },
     videoRef
   ) => {
     const seekUp = (ref: any) => ref.current?.seekUp();
@@ -29,6 +46,11 @@ const VideoUI = forwardRef<any, Props>(
     const seekToLast = (ref: any) => ref.current?.seekToLast();
     const play = (ref: any) => ref.current?.play();
     const pause = (ref: any) => ref.current?.pause();
+    const setTrimStart = (ref: any) => ref.current?.setTrimStart();
+    const setTrimEnd = (ref: any) => ref.current?.setTrimEnd();
+    const cleanTrim = (ref: any) => ref.current?.cleanTrim();
+    // const isSetTrimStart = (ref: any) => ref.current?.isSetTrimStart();
+    // const isSetTrimEnd = (ref: any) => ref.current?.isSetTrimEnd();
 
     return (
       <>
@@ -39,6 +61,23 @@ const VideoUI = forwardRef<any, Props>(
             </button>
             <button className="seekButton" onClick={() => seekUpMarker()}>
               <TbChevronRightPipe size={"2rem"} />
+            </button>
+          </div>
+          <div className="trim-button-wrapper">
+            <button
+              className={`seekButton ${isSetTrimStart && "active"}`}
+              onClick={() => setTrimStart(videoRef)}
+            >
+              <TbBracketsContainStart size={"2rem"} />
+            </button>
+            <button
+              className={`seekButton ${isSetTrimEnd && "active"}`}
+              onClick={() => setTrimEnd(videoRef)}
+            >
+              <TbBracketsContainEnd size={"2rem"} />
+            </button>
+            <button className="seekButton" onClick={() => cleanTrim(videoRef)}>
+              <TbBracketsOff size={"2rem"} />
             </button>
           </div>
           <div className="button-wrapper">

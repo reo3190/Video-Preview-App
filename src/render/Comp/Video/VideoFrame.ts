@@ -3,13 +3,13 @@ import { time2frame } from "../../../hook/api";
 type VideoFrameOptions = {
   id?: string;
   frameRate?: number;
-  callback?: (frame: number) => void;
+  callback?: (frame: number, time: number) => void;
 };
 
 class VideoFrame {
   private video: HTMLVideoElement;
   private frameRate: number;
-  private callback?: (frame: number) => void;
+  private callback?: (frame: number, time: number) => void;
 
   constructor(options: VideoFrameOptions = {}) {
     this.frameRate = options.frameRate || 24;
@@ -36,7 +36,7 @@ class VideoFrame {
   private startFrameTracking(): void {
     const updateFrame = () => {
       if (this.callback) {
-        this.callback(this.get()); // 現在のフレーム番号をコールバックで返す
+        this.callback(this.get(), this.video.currentTime); // 現在のフレーム番号をコールバックで返す
       }
       requestAnimationFrame(updateFrame); // 次のフレームの更新
     };

@@ -39,13 +39,6 @@ const enterFolderPath = async (p: string, context: ContextType) => {
   context.setTab("FOLDER");
 };
 
-// const checkDialog = async (videoMarkers: Markers) => {
-//   if (hasAnyHistory(videoMarkers)) {
-//     return confirm("現在の描画履歴を削除しますか？") ? "yes" : "no";
-//   }
-//   return "yes";
-// };
-
 export const openFileFolder = async (
   id: OpenFileFolderType,
   context: ContextType,
@@ -108,4 +101,21 @@ const saveToLocalStorage = (key: OpenFileFolderType, newPath: Path) => {
   }
 
   localStorage.setItem(key, JSON.stringify(items));
+};
+
+export const getFromLocalStorage = () => {
+  const _file = localStorage.getItem("openFile");
+  let files = _file ? (JSON.parse(_file) as Path[]) : [];
+
+  const _folder = localStorage.getItem("openDirectory");
+  let folders = _folder ? (JSON.parse(_folder) as Path[]) : [];
+
+  return { files, folders };
+};
+
+export const reLoad = (path: Path, ctx: ContextType) => {
+  const { folders } = getFromLocalStorage();
+  if (folders.length > 0 && path == folders[0]) {
+    openFileFolder("openDirectory", ctx, folders[0]);
+  }
 };

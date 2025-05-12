@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import "video.js/dist/video-js.css";
 import VideoPlayer from "./VideoPlayer";
+import { useShortcutContext } from "../../../ctx/ShortCut";
 
 type Props = {
   path: string;
@@ -37,6 +38,7 @@ const Video = forwardRef<any, Props>(
     ref
   ) => {
     // const { currentTime, setCurrentTime } = useDataContext();
+    const { useKeybind, useKeybind_up } = useShortcutContext();
     const currentTime = 10;
     const setCurrentTime = () => {};
     const encodedUrl = path.replace(/#/g, "%23");
@@ -48,6 +50,7 @@ const Video = forwardRef<any, Props>(
           volumePanel: {
             inline: false,
           },
+          fullscreenToggle: true,
         },
       },
       userActions: {
@@ -91,28 +94,23 @@ const Video = forwardRef<any, Props>(
       }
     };
 
+    const isSkip = () => {
+      const activeElement = document.activeElement;
+
+      return (
+        activeElement instanceof HTMLInputElement ||
+        activeElement instanceof HTMLTextAreaElement ||
+        activeElement?.getAttribute("contenteditable") === "true" ||
+        isMouseDown.current
+      );
+    };
+
     useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
-        const activeElement = document.activeElement;
+        if (isSkip()) return;
+        if (event.ctrlKey) return;
 
-        // フォーカスされている要素が input や textarea なら処理をスキップ
         if (
-          activeElement instanceof HTMLInputElement ||
-          activeElement instanceof HTMLTextAreaElement ||
-          activeElement?.getAttribute("contenteditable") === "true" ||
-          isMouseDown.current
-        ) {
-          return;
-        }
-
-        if (event.ctrlKey || event.metaKey) {
-          if (event.key === "ArrowLeft") {
-            seekDownMarker();
-          }
-          if (event.key === "ArrowRight") {
-            seekUpMarker();
-          }
-        } else if (
           (event.key === "ArrowLeft" || event.key === "ArrowRight") &&
           !isKeyPressed.current
         ) {
@@ -134,11 +132,6 @@ const Video = forwardRef<any, Props>(
           }, 300);
 
           isKeyPressed.current = true;
-        }
-
-        if (event.key === " ") {
-          event.preventDefault();
-          (ref as RefObject<any>).current?.clickVideo();
         }
       };
 
@@ -169,6 +162,48 @@ const Video = forwardRef<any, Props>(
         clearInterval(intervalRef.current!);
       };
     }, [ref, markers]);
+
+    useKeybind({
+      keybind: "SeekDownMarker",
+      onKeyDown: () => {
+        if (!isSkip()) seekDownMarker();
+      },
+    });
+
+    useKeybind({
+      keybind: "SeekUpMarker",
+      onKeyDown: () => {
+        if (!isSkip()) seekUpMarker();
+      },
+    });
+
+    useKeybind({
+      keybind: "ClickVideo",
+      onKeyDown: () => {
+        if (!isSkip()) (ref as RefObject<any>).current?.clickVideo();
+      },
+    });
+
+    useKeybind({
+      keybind: "VolumeUp",
+      onKeyDown: () => {
+        if (!isSkip()) (ref as RefObject<any>).current?.volumeUp();
+      },
+    });
+
+    useKeybind({
+      keybind: "VolumeDown",
+      onKeyDown: () => {
+        if (!isSkip()) (ref as RefObject<any>).current?.volumeDown();
+      },
+    });
+
+    useKeybind({
+      keybind: "Fullscreen",
+      onKeyDown: () => {
+        if (!isSkip()) (ref as RefObject<any>).current?.fullScreen();
+      },
+    });
 
     return (
       <>

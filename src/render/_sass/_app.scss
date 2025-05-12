@@ -118,8 +118,28 @@ body {
   width: 100vw;
   height: 100vh;
 
-  &.top {
-    display: flex;
+  &.top,
+  &.player {
+    // display: flex;
+    .progress-wrapper {
+      width: 100%;
+      height: 3px;
+
+      .bar-outer {
+        width: 100%;
+        height: 100%;
+
+        .bar-inner {
+          height: 100%;
+          background: var(--paint-UI-select);
+        }
+      }
+    }
+    .list-wrapper {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
   }
 }
 
@@ -142,13 +162,13 @@ body {
 
     &.active {
       position: relative;
-      color: #3693fd;
+      color: var(--paint-UI-select);
       // border-right: 2px solid aqua;
       &::before {
         content: "";
         width: 2px;
         height: 30px;
-        background: #3693fd;
+        background: var(--paint-UI-select);
         position: absolute;
         top: 7px;
         right: 0;

@@ -1,6 +1,6 @@
 {
   "name": "video-preview-app",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "main": "dist/main.js",
   "scripts": {
     "dev": "rimraf dist && run-p dev:webpack dev:electron",
@@ -82,6 +82,7 @@
   "dependencies": {
     "@napi-rs/canvas": "^0.1.65",
     "@popcornjs/core": "^2.8.1",
+    "electron-progressbar": "^2.2.1",
     "electron-updater": "^6.1.4",
     "perfect-freehand": "^1.2.2",
     "popcorn": "^0.0.3",

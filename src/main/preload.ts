@@ -42,6 +42,18 @@ const electronHandler = {
     }
   },
 
+  onCheckCanClose: (callback: () => () => void) => {
+    const listener = (_: IpcRendererEvent) => callback();
+    ipcRenderer.on("check-can-close", listener);
+
+    return () => {
+      ipcRenderer.removeListener("check-can-close", listener);
+    };
+  },
+
+  sendCloseResponse: (canClose: boolean) =>
+    ipcRenderer.send("check-can-close-response", canClose),
+
   updateMenu: (menuItems: string, files: Path[], folders: Path[]) =>
     ipcRenderer.send("update-menu", menuItems, files, folders),
 
@@ -96,6 +108,24 @@ const electronHandler = {
       videoPath
     );
     return response;
+  },
+
+  onProgress: (callback: (e: number) => () => void) => {
+    const listener = (_: IpcRendererEvent, e: number) => callback(e);
+    ipcRenderer.on("task-progress", listener);
+
+    return () => {
+      ipcRenderer.removeListener("task-progress", listener);
+    };
+  },
+
+  onComplete: (callback: () => () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("task-complete", listener);
+
+    return () => {
+      ipcRenderer.removeListener("task-complete", listener);
+    };
   },
 
   onSaveImages: (callback: () => () => void) => {

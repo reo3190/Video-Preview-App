@@ -67,9 +67,16 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const videoRef = useRef<HTMLDivElement | null>(null);
     const playerRef = useRef<Player | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const isPlayRef = useRef<boolean>(false);
     const frameRef = useRef<number>(0);
     const [currFrame, setCurrFrame] = useState<number>(1);
     const [allFrame, setAllFrame] = useState<number>(1);
+
+    const [trimStart, setTrimStart] = useState<boolean>(false);
+    const [trimEnd, setTrimEnd] = useState<boolean>(false);
+
+    const trimStartRef = useRef<number | null>(null);
+    const trimEndRef = useRef<number | null>(null);
 
     const v = videoMarkers[curVideo.path];
 
@@ -113,6 +120,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
       player.on("play", () => {
         setIsPlaying(true);
+        isPlayRef.current = true;
         if (onPlay) {
           onPlay();
         }
@@ -120,6 +128,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
       player.on("pause", () => {
         setIsPlaying(false);
+        isPlayRef.current = false;
         if (onPause) {
           onPause();
         }
@@ -132,16 +141,44 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
       // player.on("timeupdate", () => {
       //   // onSeek(frameRef.current);
+      //   const ctime = player.currentTime();
+      //   const dtime = player.duration();
+
+      //   if (ctime != undefined && dtime && trimStart && trimEnd) {
+      //     if (ctime > trimEnd) {
+      //       player.currentTime(trimStart);
+      //     }
+      //   }
       // });
 
       const videoFrame = new VideoFrame({
         id: "video_html5_api",
         frameRate: fps,
-        callback: (frame: number) => {
+        callback: (frame: number, time: number) => {
           frameRef.current = frame;
           setCurrFrame(round(frame));
           setSlider(frame);
           onSeek(frameRef.current);
+
+          const dtime = player.duration();
+          if (dtime && isPlayRef.current) {
+            if (trimStartRef.current != null && trimEndRef.current != null) {
+              if (time > trimEndRef.current) {
+                player.currentTime(trimStartRef.current);
+              } else if (time < trimStartRef.current) {
+                player.currentTime(trimStartRef.current);
+              }
+            }
+            //  else if (trimStartRef.current != null) {
+            //   if (time < trimStartRef.current) {
+            //     player.currentTime(trimStartRef.current);
+            //   }
+            // } else if (trimEndRef.current != null) {
+            //   if (time > trimEndRef.current) {
+            //     player.currentTime(0);
+            //   }
+            // }
+          }
         },
       });
 
@@ -278,6 +315,27 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       playerRef.current?.currentTime(time);
     };
 
+    const volumeUp = () => {
+      if (playerRef.current) {
+        const current = playerRef.current.volume();
+
+        if (current != undefined) {
+          const next = Math.min(current + 0.1, 1.0);
+          playerRef.current.volume(next);
+        }
+      }
+    };
+
+    const volumeDown = () => {
+      if (playerRef.current) {
+        const current = playerRef.current.volume();
+        if (current) {
+          const next = Math.max(current - 0.1, 0.0);
+          playerRef.current.volume(next);
+        }
+      }
+    };
+
     const addMarker = (frame: number = getCurrentFrame()) => {
       if (!playerRef.current || !videoRef.current) return;
       if (markerFrames.includes(frame)) return;
@@ -319,10 +377,49 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       p.append(el);
     };
 
+    const makeTrimElement = (
+      p: Element,
+      frame: number,
+      type: "trimS" | "trimE"
+    ) => {
+      if (!playerRef.current) return null;
+      removeTrimElement(type);
+
+      const totalTime = playerRef.current.duration() || 1;
+      const total_float = totalTime * fps;
+      const left = (frame / total_float) * 100;
+      const right = ((total_float - frame) / total_float) * 100;
+      const el = document.createElement("div");
+      el.className =
+        type == "trimS"
+          ? "vjs-trims-marker"
+          : type == "trimE"
+          ? "vjs-trime-marker"
+          : "err";
+      const wid = (1 / total_float) * 100;
+      if (type == "trimS") el.style.left = "0";
+      if (type == "trimE") el.style.right = "0";
+      el.style.width = type == "trimS" ? left - wid + "%" : right + "%";
+      el.style.minWidth = "5px";
+      // el.setAttribute("data-time-trim", String(frame));
+      p.append(el);
+    };
+
     const removeMarkerElement = (frame: number) => {
       if (!playerRef.current) return;
       const el = document.querySelector(`[data-time="${frame}"]`);
       el?.remove();
+    };
+
+    const removeTrimElement = (type: "trimS" | "trimE") => {
+      if (!playerRef.current) return;
+      if (type == "trimS") {
+        const el1 = document.querySelector(`.vjs-trims-marker`);
+        el1?.remove();
+      } else if (type == "trimE") {
+        const el2 = document.querySelector(`.vjs-trime-marker`);
+        el2?.remove();
+      }
     };
 
     const makeSequenceElement = (
@@ -404,7 +501,48 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           seekUp();
         }
       },
-      getCurrentTime: () => playerRef.current?.currentTime() || 0,
+      setTrimStart: () => {
+        setTrimStart(true);
+        trimStartRef.current = playerRef.current?.currentTime() ?? null;
+        const p = getProgressBarElement();
+        if (p) {
+          const time = playerRef.current?.currentTime() ?? 0;
+          makeTrimElement(p, time2frame(time, fps) + 1, "trimS");
+        }
+      },
+      setTrimEnd: () => {
+        setTrimEnd(true);
+        trimEndRef.current = playerRef.current?.currentTime() ?? null;
+        const p = getProgressBarElement();
+        if (p) {
+          const time = playerRef.current?.currentTime() ?? 0;
+          makeTrimElement(p, time2frame(time, fps) + 1, "trimE");
+        }
+      },
+      cleanTrim: () => {
+        trimStartRef.current = null;
+        trimEndRef.current = null;
+        removeTrimElement("trimS");
+        removeTrimElement("trimE");
+        setTrimStart(false);
+        setTrimEnd(false);
+      },
+      isSetTrimStart: () => {
+        return trimStartRef.current;
+      },
+      isSetTrimEnd: () => {
+        return trimEndRef.current;
+      },
+      volumeUp: () => volumeUp(),
+      volumeDown: () => volumeDown(),
+      fullScreen: () => {
+        if (playerRef.current?.isFullscreen()) {
+          playerRef.current?.exitFullscreen();
+        } else {
+          playerRef.current?.requestFullscreen();
+        }
+      },
+      getCurrentTime: () => playerRef.current?.currentTime() ?? 0,
       setCurrentTime: (time: number) => playerRef.current?.currentTime(time),
       getCurrentFrame: () => getCurrentFrame(),
       setCurrentFrame: (f: number) => setCurrentFrame(f),
@@ -425,6 +563,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           frame={currFrame}
           allFrame={allFrame}
           isPlay={isPlaying}
+          isSetTrimStart={trimStart}
+          isSetTrimEnd={trimEnd}
           seekDownMarker={seekDownMarker}
           seekUpMarker={seekUpMarker}
           ref={ref}

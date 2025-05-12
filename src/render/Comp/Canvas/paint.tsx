@@ -84,7 +84,7 @@ const Paint = forwardRef<any, Props>(
 
     const [update, setUpdate] = useState<boolean | null>(null);
 
-    useLayoutEffect(() => {
+    const drawCanvas = () => {
       const canvasCtx = getContext();
       clear();
 
@@ -102,6 +102,10 @@ const Paint = forwardRef<any, Props>(
       });
 
       canvasCtx?.restore();
+    };
+
+    useLayoutEffect(() => {
+      drawCanvas();
     }, [elements, action, scale]);
 
     useEffect(() => {
@@ -552,6 +556,8 @@ const Paint = forwardRef<any, Props>(
       clear();
       setHistory(e.history);
       setIndex(e.index);
+
+      drawCanvas();
     };
 
     const getSaveImageRef = (): HTMLCanvasElement | null => {

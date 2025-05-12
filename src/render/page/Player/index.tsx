@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDataContext } from "../../../hook/UpdateContext";
+import { useShortcutContext } from "../../../ctx/ShortCut";
 import Video from "../../Comp/Video";
 import Canvas from "../../Comp/Canvas";
 import ToolBar from "../../Comp/Canvas/toolBar";
+import Progress from "../../Comp/Progress";
 import { handleSaveImages } from "./util/saveCaputure";
 import { onCheckOpen, onCheckOpenHistory } from "../../../hook/useListener";
 import { openFileFolder, handleDrop } from "../../../hook/useLoadFileFolder";
@@ -30,7 +32,10 @@ const Player = () => {
     tab,
     filteredVideoList,
     filteredEditVideoList,
+    paintCopyboard,
+    setPaintCopyboard,
   } = useDataContext();
+  const { useKeybind } = useShortcutContext();
 
   const navigate = useNavigate();
 
@@ -65,6 +70,9 @@ const Player = () => {
   const seqVideos = useRef<string[] | null>(curVideo.seqVideo || null);
 
   const path = editMovPathCache("get", curVideo.path) || curVideo.path;
+
+  const [progress, setProgress] = useState<number>(0);
+  const [done, setDone] = useState<boolean>(true);
 
   const [hoverItem, setHoverItem] = useState<{
     e: string | null;
@@ -122,18 +130,21 @@ const Player = () => {
 
   useEffect(() => {
     const saveImage = async () => {
+      setDone(false);
       const markersRender: MarkersRender = await handleSaveImages(
         curVideo.name,
         markers,
         curVideo.path,
         sizeRef.current,
-        fpsRef.current
+        fpsRef.current,
+        setProgress
       );
       window.electron.saveCompositeImages(
         markersRender,
         outputFileName,
         outputFrameOffset
       );
+      setDone(true);
     };
     const removeListener = window.electron.onSaveImages(() => saveImage());
 
@@ -155,11 +166,13 @@ const Player = () => {
         canvasRef.current.overwriteHistory({
           history: history[0],
           index: history[1],
+          id: Date.now(),
         });
       } else {
         canvasRef.current.overwriteHistory({
           history: [[]],
           index: 0,
+          id: Date.now(),
         });
       }
 
@@ -198,6 +211,7 @@ const Player = () => {
     canvasRef.current.overwriteHistory({
       history: [[]],
       index: 0,
+      id: Date.now(),
     });
     setMarkers((pre) => {
       const newDict = { ...pre }; // オブジェクトをコピー
@@ -275,15 +289,54 @@ const Player = () => {
     }
   };
 
+  const copyPaint = () => {
+    const { history, index } = canvasRef.current.getHistory();
+    setPaintCopyboard([history, index]);
+  };
+
+  const pastePaint = () => {
+    const newId = Date.now();
+    canvasRef.current.overwriteHistory({
+      history: paintCopyboard[0],
+      index: paintCopyboard[1],
+    });
+
+    handleAddMarker(paintCopyboard[0], paintCopyboard[1], sizeRef.current);
+    // handleSetMarkers();
+  };
+
+  useKeybind({
+    keybind: "NextVideo",
+    onKeyDown: () => loadNextBack(1),
+  });
+
+  useKeybind({
+    keybind: "PrevVideo",
+    onKeyDown: () => loadNextBack(-1),
+  });
+
+  useKeybind({
+    keybind: "CopyPaint",
+    onKeyDown: () => copyPaint(),
+  });
+
+  useKeybind({
+    keybind: "PastePaint",
+    onKeyDown: () => pastePaint(),
+  });
+
   return (
     <>
       <div
-        className="window"
+        className="window player"
         onDragOver={(e) => {
           e.preventDefault();
         }}
         onDrop={(e) => handleDrop(e, context)}
       >
+        <div className="progress-wrapper">
+          <Progress progress={progress} done={done} />
+        </div>
         <div className="player-head">
           <button className="back-button" onClick={() => handleTop()}>
             <IoArrowBack size={"2.5rem"} />
@@ -337,6 +390,7 @@ const Player = () => {
               removeMarker={handleRemoveMarker}
             />
           </div>
+
           <div className="canvas-video" ref={outerRef}>
             <div className="canvas-video-inner">
               <div className="canvas-wrapper">

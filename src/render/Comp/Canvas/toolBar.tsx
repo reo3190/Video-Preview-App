@@ -133,48 +133,6 @@ const ToolBar: FC<Props> = ({
     // opacityRef.current = String(getOpacity(true));
   }, [activePaintTool]);
 
-  // useEffect(() => {
-  //   const handleKey = (e) => {
-  //     const key = String.fromCharCode(e.which).toLowerCase();
-  //     if (e.ctrlKey || e.metaKey) {
-  //       switch (key) {
-  //         case "s":
-  //           e.preventDefault();
-  //           saveImage();
-  //           break;
-  //         case "z":
-  //           e.preventDefault();
-  //           pRef.current.undo();
-  //           break;
-  //         case "x":
-  //           e.preventDefault();
-  //           pRef.current.redo();
-  //           break;
-  //       }
-  //     } else {
-  //       switch (key) {
-  //         case "b":
-  //           e.preventDefault();
-  //           setTool("pen");
-  //           break;
-  //         case "e":
-  //           e.preventDefault();
-  //           setTool("eraser");
-  //           break;
-  //         case "t":
-  //           e.preventDefault();
-  //           setTool("text");
-  //           break;
-  //       }
-  //     }
-  //   };
-
-  //   document.addEventListener("keydown", handleKey);
-  //   return () => {
-  //     document.removeEventListener("keydown", handleKey);
-  //   };
-  // }, [pRef, currentImgIndex]);
-
   const handleBlur = (
     input: string,
     setFunc: (e: string) => void,
@@ -234,6 +192,10 @@ const ToolBar: FC<Props> = ({
             pRef.current.undo();
             break;
           case "x":
+            e.preventDefault();
+            pRef.current.redo();
+            break;
+          case "y":
             e.preventDefault();
             pRef.current.redo();
             break;
@@ -371,30 +333,7 @@ const ToolBar: FC<Props> = ({
             <MdDelete size={"2rem"} />
           </button>
         </div>
-        {/* <div className="input-detail-wrapper">
-          <div className="input-detail">
-            <PiWaveSineBold size={"2rem"} />
-            <input
-              type="number"
-              value={getSmooth(false)}
-              onChange={(e) => setSmooth(e.target.value)}
-              onBlur={(e) => handleBlur(e.target.value, setSmooth, "0")}
-              min="0"
-              max="10"
-            />
-          </div>
-          <div className="input-detail">
-            <LuCircleDot size={"2rem"} />
-            <input
-              type="number"
-              value={Math.floor(getPress(false) * 100)}
-              onChange={(e) => setPress(e.target.value)}
-              onBlur={(e) => handleBlur(e.target.value, setPress, "0")}
-              min="0"
-              max="100"
-            />
-          </div>
-        </div>  */}
+
         <div className="history">
           <button onClick={() => pRef.current?.undo()} disabled={!canUndo}>
             <IoArrowUndo size={"2rem"} />

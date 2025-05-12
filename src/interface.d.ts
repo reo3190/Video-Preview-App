@@ -1,7 +1,12 @@
-import { type } from "os";
+import React, { RefObject } from "react";
 import { StrokeOptions } from "perfect-freehand";
 import { Location } from "react-router-dom";
+
 export interface IElectronAPI {
+  onProgress: (callback: (e: number) => void) => () => void;
+  onComplete: (callback: () => void) => () => void;
+  onCheckCanClose: (callback: () => void) => () => void;
+  sendCloseResponse: (e: boolean) => void;
   showFilePath: (e: File, f: Boolean) => string | null;
   updateMenu: (e: string, a: Path[], b: Path[]) => void;
   getWindowSize: () => Promise<Electron.Rectangle>;
@@ -175,6 +180,22 @@ declare global {
   type videojsSource = {
     sources: [{ src: Path; type: string }];
   };
+
+  type Keybind = {
+    altKey?: boolean;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    shiftKey?: boolean;
+    key: KeyboardEvent["key"];
+  };
+
+  type KeybindProps = {
+    keybind: string;
+    onKeyDown?: (event: KeyboardEvent) => void;
+    targetRef?: RefObject<HTMLElement>;
+  };
+
+  type ShortCuts = Record<string, Keybind>;
 
   interface Succ {
     success: string;
