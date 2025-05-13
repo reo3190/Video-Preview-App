@@ -34,10 +34,10 @@ const defaultShortcuts: ShortCuts = {
     key: "ArrowDown",
   },
   NextVideo: {
-    key: "PageUp",
+    key: "PageDown",
   },
   PrevVideo: {
-    key: "PageDown",
+    key: "PageUp",
   },
   CopyPaint: {
     key: "c",
