@@ -43,12 +43,12 @@ interface DataContext {
   setLastLoad: (e: number) => void;
   imgCache: Map<string, string>;
   editImgCache: (mode: CacheMode, key: string, value?: string) => string | null;
-  videoMetaCache: Map<string, [Size, FPS, number]>;
+  videoMetaCache: Map<string, Meta>;
   editVideoMetaCache: (
     mode: CacheMode,
     key: string,
-    value?: [Size, FPS, number]
-  ) => [Size, FPS, number] | null;
+    value?: Meta
+  ) => Meta | null;
   paintTool: PaintTool;
   setPaintTool: (tool: PaintToolName, update: Partial<PaintToolConfig>) => void;
   activePaintTool: PaintToolName;
@@ -121,7 +121,7 @@ const defaultContext: DataContext = {
   setLastLoad: () => {},
   imgCache: new Map<string, string>(),
   editImgCache: () => null,
-  videoMetaCache: new Map<string, [Size, FPS, number]>(),
+  videoMetaCache: new Map<string, Meta>(),
   editVideoMetaCache: () => null,
   paintTool: {
     pen: { size: 10, color: "#000000", opacity: 1 },
@@ -199,9 +199,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   );
   const [lastLoad, setLastLoad] = useState<number>(defaultContext.lastLoad);
   const imgCache = useState<Map<string, string>>(new Map())[0];
-  const videoMetaCache = useState<Map<string, [Size, FPS, number]>>(
-    new Map()
-  )[0];
+  const videoMetaCache = useState<Map<string, Meta>>(new Map())[0];
   const [paintTool, setPaintTool] = useState<PaintTool>(
     defaultContext.paintTool
   );
@@ -258,6 +256,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const updateVideoList = useCallback((e: Video[]): void => {
     setVideoList(e);
     updateCurPage(0);
+    setFilteredVideoList(e);
+    setFilter(defaultContext.filter);
   }, []);
 
   const updateFilteredVideoList = useCallback((e: Video[]): void => {
@@ -319,11 +319,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const editVideoMetaCache = useCallback(
-    (
-      mode: CacheMode,
-      key: string,
-      value?: [Size, FPS, number]
-    ): [Size, FPS, number] | null => {
+    (mode: CacheMode, key: string, value?: Meta): Meta | null => {
       switch (mode) {
         case "add":
           if (!value) return null;
@@ -397,7 +393,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       setInputPath(p);
       setCurVideo((pre) => (v ? v : pre));
       setCurPage(0);
-      setVideoList(vv);
+      updateVideoList(vv);
+      // setVideoList(vv);
+      // setFilteredVideoList(vv);
+      // setFilter(defaultContext.filter);
       // alert("これは警告メッセージです！");
     },
     []

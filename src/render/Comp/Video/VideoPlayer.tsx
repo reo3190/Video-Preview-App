@@ -27,6 +27,7 @@ interface VideoPlayerProps {
   playlist: videojsSource[] | null;
   seqMarker: Marker | null;
   seqVideos: string[] | null;
+  pts: number;
 }
 
 // 公開するメソッドの型
@@ -51,6 +52,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       seekUpMarker,
       seqMarker,
       seqVideos,
+      pts,
     },
     ref
   ) => {
@@ -113,10 +115,14 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       }
     }, [options, curVideo?.path]);
 
+    useEffect(() => {
+      if (allFrame < currFrame) {
+        setCurrFrame(allFrame);
+      }
+    }, [allFrame, currFrame]);
+
     const __init__ = (videoElement: HTMLElement) => {
       const player = (playerRef.current = videojs(videoElement, options));
-
-      // player.on("seeking", () => {});
 
       player.on("play", () => {
         setIsPlaying(true);
@@ -139,21 +145,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         setMuted(player.muted() || false);
       });
 
-      // player.on("timeupdate", () => {
-      //   // onSeek(frameRef.current);
-      //   const ctime = player.currentTime();
-      //   const dtime = player.duration();
-
-      //   if (ctime != undefined && dtime && trimStart && trimEnd) {
-      //     if (ctime > trimEnd) {
-      //       player.currentTime(trimStart);
-      //     }
-      //   }
-      // });
-
       const videoFrame = new VideoFrame({
         id: "video_html5_api",
         frameRate: fps,
+        pts: pts,
         callback: (frame: number, time: number) => {
           frameRef.current = frame;
           setCurrFrame(round(frame));
@@ -161,23 +156,16 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           onSeek(frameRef.current);
 
           const dtime = player.duration();
+
           if (dtime && isPlayRef.current) {
             if (trimStartRef.current != null && trimEndRef.current != null) {
               if (time > trimEndRef.current) {
                 player.currentTime(trimStartRef.current);
               } else if (time < trimStartRef.current) {
+                console.log(trimStartRef.current);
                 player.currentTime(trimStartRef.current);
               }
             }
-            //  else if (trimStartRef.current != null) {
-            //   if (time < trimStartRef.current) {
-            //     player.currentTime(trimStartRef.current);
-            //   }
-            // } else if (trimEndRef.current != null) {
-            //   if (time > trimEndRef.current) {
-            //     player.currentTime(0);
-            //   }
-            // }
           }
         },
       });
@@ -194,7 +182,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
         const el = document.createElement("div");
         el.className = "vjs-marker-frame";
-        const _total_float = Math.round(round((total || 1) * fps));
+        const _total_float = Math.round((total || 1) * fps);
         const wid = (1 / _total_float) * 100;
         el.style.width = wid + "%";
         el.style.minWidth = "5px";
@@ -203,7 +191,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         setAllFrame(_total_float);
 
         if (seqMarker && seqVideos) {
-          console.log(seqMarker);
           const seqFrames = Object.keys(seqMarker || {}).map(Number);
           seqFrames.sort((a, b) => a - b);
 
@@ -232,6 +219,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         // ------
         player.volume(masterVolume);
         player.muted(muted);
+        player.currentTime(0);
       });
     };
 
@@ -245,32 +233,19 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
     const seekUp = () => {
       if (playerRef.current) {
-        const duration = playerRef.current.duration();
-        const currentTime = playerRef.current.currentTime();
-
-        if (duration !== undefined && currentTime !== undefined) {
-          const seekTime = round(
-            Math.min(duration, currentTime + frame2time(1, fps))
-          );
-          const next = time2frame(seekTime, fps) + 1;
-          if (next <= allFrame) {
-            playerRef.current.currentTime(seekTime);
-          }
+        const next = currFrame + 1;
+        if (next < allFrame) {
+          setCurrentFrame(next);
+        } else if (next == allFrame) {
+          playerRef.current?.currentTime(frame2time(allFrame, fps));
         }
       }
     };
 
     const seekDown = () => {
       if (playerRef.current) {
-        const duration = playerRef.current.duration();
-        const currentTime = playerRef.current.currentTime();
-
-        if (duration !== undefined && currentTime !== undefined) {
-          const seekTime = round(
-            Math.max(0, round(currentTime) - frame2time(1, fps))
-          );
-          playerRef.current.currentTime(seekTime);
-        }
+        const prev = Math.max(0, currFrame - 1);
+        setCurrentFrame(prev);
       }
     };
 
@@ -310,9 +285,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     };
 
     const setCurrentFrame = (frame: number): void => {
-      const halfFrameTime = frame2time(1, fps) / 2;
-      const time = round(frame2time(frame, fps) - halfFrameTime);
-      playerRef.current?.currentTime(time);
+      // const halfFrameTime = frame2time(1, fps) / 2;
+      const time = frame2time(frame, fps);
+      const offset = frame2time(0.1, fps) - pts;
+      playerRef.current?.currentTime(time - offset);
     };
 
     const volumeUp = () => {
@@ -496,26 +472,25 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       seekDown: () => seekDown(),
       seekToTop: () => playerRef.current?.currentTime(0),
       seekToLast: () => {
-        const d = allFrame - currFrame;
-        for (let i = 0; i < d; i++) {
-          seekUp();
-        }
+        playerRef.current?.currentTime(frame2time(allFrame, fps));
       },
       setTrimStart: () => {
         setTrimStart(true);
-        trimStartRef.current = playerRef.current?.currentTime() ?? null;
+        const currTime = playerRef.current?.currentTime() ?? null;
+        trimStartRef.current = currTime;
         const p = getProgressBarElement();
         if (p) {
-          const time = playerRef.current?.currentTime() ?? 0;
+          const time = currTime ? currTime - pts : 0;
           makeTrimElement(p, time2frame(time, fps) + 1, "trimS");
         }
       },
       setTrimEnd: () => {
         setTrimEnd(true);
-        trimEndRef.current = playerRef.current?.currentTime() ?? null;
+        const currTime = playerRef.current?.currentTime() ?? null;
+        trimEndRef.current = currTime ? currTime : null;
         const p = getProgressBarElement();
         if (p) {
-          const time = playerRef.current?.currentTime() ?? 0;
+          const time = currTime ? currTime - pts : 0;
           makeTrimElement(p, time2frame(time, fps) + 1, "trimE");
         }
       },
@@ -543,7 +518,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         }
       },
       getCurrentTime: () => playerRef.current?.currentTime() ?? 0,
-      setCurrentTime: (time: number) => playerRef.current?.currentTime(time),
+      setCurrentTime: (time: number) =>
+        playerRef.current?.currentTime(time - pts),
       getCurrentFrame: () => getCurrentFrame(),
       setCurrentFrame: (f: number) => setCurrentFrame(f),
       setWidth: (w: number) => setWidth(w),
@@ -567,6 +543,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           isSetTrimEnd={trimEnd}
           seekDownMarker={seekDownMarker}
           seekUpMarker={seekUpMarker}
+          pts={pts}
           ref={ref}
         />
       </>

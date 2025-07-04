@@ -16,6 +16,7 @@ export interface IElectronAPI {
   ) => () => void;
   openFileFolder: (id: "openFile" | "openDirectory") => Promise<string>;
   getVideoMeta: (e: string) => Promise<any | Err>;
+  getVideoPTS: (e: string) => Promise<string | Err>;
   getVideoList: (e: string) => Promise<Video[] | Err>;
   getThumbnail: (e: string) => Promise<string | Err>;
   _getThumbnail: (e: string) => Promise<[string[], number] | Err>;
@@ -38,6 +39,8 @@ export interface IElectronAPI {
     c: string,
     d: (Meta | null)[]
   ) => Promise<Video | Err>;
+  ArgOpen: () => Promise<void>;
+  confirmClose: (e: string) => Promise<boolean>;
 }
 
 type Weaken<T, K extends keyof T> = {
@@ -163,7 +166,8 @@ declare global {
     setTab: (e: TabType) => void;
   };
 
-  type Meta = [Size, FPS, number];
+  // WHサイズ fps デュレーション 1フレーム目開始時間
+  type Meta = [Size, FPS, number, number];
 
   type editVideoMetaCache = (
     mode: CacheMode,

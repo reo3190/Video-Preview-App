@@ -1,5 +1,6 @@
 import React, { forwardRef } from "react";
 import "video.js/dist/video-js.css";
+import Tooltips from "../Tooltips";
 import {
   FaAnglesLeft,
   FaAnglesRight,
@@ -15,6 +16,8 @@ import {
   TbBracketsContainStart,
   TbBracketsContainEnd,
 } from "react-icons/tb";
+import { MdErrorOutline } from "react-icons/md";
+
 type Props = {
   fps: FPS;
   frame: number;
@@ -24,6 +27,7 @@ type Props = {
   isSetTrimEnd: Boolean;
   seekDownMarker: () => void;
   seekUpMarker: () => void;
+  pts: number;
 };
 
 const VideoUI = forwardRef<any, Props>(
@@ -37,6 +41,7 @@ const VideoUI = forwardRef<any, Props>(
       isSetTrimEnd,
       seekDownMarker,
       seekUpMarker,
+      pts,
     },
     videoRef
   ) => {
@@ -49,8 +54,6 @@ const VideoUI = forwardRef<any, Props>(
     const setTrimStart = (ref: any) => ref.current?.setTrimStart();
     const setTrimEnd = (ref: any) => ref.current?.setTrimEnd();
     const cleanTrim = (ref: any) => ref.current?.cleanTrim();
-    // const isSetTrimStart = (ref: any) => ref.current?.isSetTrimStart();
-    // const isSetTrimEnd = (ref: any) => ref.current?.isSetTrimEnd();
 
     return (
       <>
@@ -106,7 +109,29 @@ const VideoUI = forwardRef<any, Props>(
           </div>
           <div className="fps-wrapper">
             <div className="seek-frame">
-              {frame} / {allFrame}F
+              {pts != 0 && (
+                <Tooltips
+                  content={
+                    <>
+                      <div className="warn-icon">
+                        <MdErrorOutline size={"1.8rem"} />
+                      </div>
+                    </>
+                  }
+                  pop_content={
+                    <>
+                      この動画は全フレームを再生
+                      <br />
+                      できない可能性があります。
+                    </>
+                  }
+                  className="warn"
+                  pop_size={{ w: 180, h: 50 }}
+                />
+              )}
+              <div>
+                {frame} / {allFrame}F
+              </div>
             </div>
             <div className="fps">{`[${fps}]`}</div>
           </div>

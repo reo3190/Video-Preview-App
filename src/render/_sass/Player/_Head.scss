@@ -66,12 +66,24 @@
     gap: 10px;
     padding-right: 20px;
     font-size: 1.2rem;
+    // grid-template-columns: 1fr 300px;
+
     .video-path {
+      // grid-column: 1/2;
+      max-width: 100%;
       text-align: end;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
 
     .video-name {
-      text-align: start;
+      max-width: 300px;
+      width: fit-content;
+      // grid-column: 2/3;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
   }
 }

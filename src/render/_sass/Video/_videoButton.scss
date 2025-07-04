@@ -125,6 +125,14 @@
     .seek-frame {
       font-size: 1.8rem;
       justify-content: flex-end;
+      align-items: center;
+      white-space: nowrap;
+      display: flex;
+      gap: 10px;
+
+      .warn-icon {
+        transform: translateY(1px);
+      }
     }
     .fps {
       font-size: 1.2rem;

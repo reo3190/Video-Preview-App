@@ -27,6 +27,26 @@ const enterFilePath = async (p: string, context: ContextType) => {
   }
 };
 
+const enterFilePaths = async (list: string[], context: ContextType) => {
+  try {
+    const { setLoad, initVideoList, navi, setTab, loc } = context;
+    if (!loc) return;
+
+    const videoList = list.map((e) => {
+      return path2VideoType(e);
+    });
+
+    setLoad(true);
+    videoList.sort((x, y) => x.name.localeCompare(y.name));
+    initVideoList(`${videoList.length} videos`, null, videoList);
+    navi("/", false);
+    setLoad(false);
+    setTab("FOLDER");
+  } catch (error) {
+    context.setLoad(false);
+  }
+};
+
 const enterFolderPath = async (p: string, context: ContextType) => {
   context.setLoad(true);
   const res = await window.electron.getVideoList(p);
@@ -70,22 +90,27 @@ export const handleDrop = async (
   const item = event.dataTransfer.items[0];
   const entry = item.webkitGetAsEntry();
   if (!entry) return;
-  const filepath = window.electron.showFilePath(
-    event.dataTransfer.files[0],
-    entry.isFile
-  );
-
-  if (!filepath) return;
-
-  // const res = await checkDialog(context.videoMarkers);
-  // if (res === "no") return;
-
-  if (entry.isFile) {
-    enterFilePath(filepath, context);
-  } else if (entry.isDirectory) {
-    enterFolderPath(filepath, context);
+  const filepaths: string[] = [];
+  const files = event.dataTransfer.files;
+  for (let i = 0; i < files.length; i++) {
+    const p = window.electron.showFilePath(files[i], entry.isFile);
+    if (p) {
+      filepaths.push(p);
+    }
   }
-  saveToLocalStorage(entry.isFile ? "openFile" : "openDirectory", filepath);
+
+  if (filepaths.length == 0) return;
+
+  if (entry.isFile && filepaths.length == 1) {
+    enterFilePath(filepaths[0], context);
+    saveToLocalStorage("openFile", filepaths[0]);
+  } else if (entry.isFile && event.dataTransfer.files.length > 1) {
+    enterFilePaths(filepaths, context);
+    filepaths.forEach((p) => saveToLocalStorage("openFile", p));
+  } else if (entry.isDirectory) {
+    enterFolderPath(filepaths[0], context);
+    saveToLocalStorage("openDirectory", filepaths[0]);
+  }
 };
 
 const saveToLocalStorage = (key: OpenFileFolderType, newPath: Path) => {

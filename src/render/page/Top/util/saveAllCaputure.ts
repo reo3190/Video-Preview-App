@@ -3,7 +3,7 @@ import { handleSaveImages } from "../../Player/util/saveCaputure";
 const handleSaveAllImages = async (
   nameList: Record<Path, string>,
   data: Markers,
-  metaMap: Map<string, [Size, FPS, number]>,
+  metaMap: Map<string, Meta>,
   setProgress: React.Dispatch<React.SetStateAction<number>>
 ): Promise<MarkersRender> => {
   let markersRender: MarkersRender = {};

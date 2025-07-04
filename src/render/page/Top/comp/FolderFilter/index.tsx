@@ -41,7 +41,8 @@ const FolderFilter = () => {
         <div className="fil-date">
           <FaCalendar size={"1.5rem"} />
           <select
-            defaultValue={filter.date}
+            // defaultValue={filter.date}
+            value={filter.date}
             onChange={(e) => handleEditFilter({ date: e.target.value })}
           >
             <option value={"all"}>All</option>
@@ -55,7 +56,8 @@ const FolderFilter = () => {
         <div className="fil-check">
           <IoMdCheckbox size={"1.5rem"} />
           <select
-            defaultValue={filter.check}
+            // defaultValue={filter.check}
+            value={filter.check}
             onChange={(e) => handleEditFilter({ check: e.target.value })}
           >
             <option value="all">All</option>

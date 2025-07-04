@@ -66,6 +66,7 @@ const Player = () => {
   const [curFrame, setCurFrame] = useState<number>(1);
   const sizeRef = useRef<Size>(metaData[0]);
   const fpsRef = useRef<number>(metaData[1]);
+  const PTSRef = useRef<number>(metaData[3]);
   const seqMarker = useRef<Marker | null>(curVideo.seq || null);
   const seqVideos = useRef<string[] | null>(curVideo.seqVideo || null);
 
@@ -248,8 +249,9 @@ const Player = () => {
       }
     } else {
       const parts = curVideo.path.split("\\");
+      if (curVideo.path.endsWith(".mp4") || curVideo.path.endsWith(".mov"))
+        parts.pop();
       const str = parts.join("/");
-
       return str + "/";
     }
   };
@@ -411,6 +413,7 @@ const Player = () => {
                   fps={fpsRef.current}
                   seq={seqMarker.current}
                   seqVideos={seqVideos.current}
+                  pts={PTSRef.current}
                   ref={videoRef}
                 />
               </div>

@@ -20,6 +20,7 @@ type Props = {
   onPause?: () => void;
   seq: Marker | null;
   seqVideos: string[] | null;
+  pts: number;
 };
 
 const Video = forwardRef<any, Props>(
@@ -34,6 +35,7 @@ const Video = forwardRef<any, Props>(
       fps,
       seq,
       seqVideos,
+      pts,
     },
     ref
   ) => {
@@ -223,6 +225,7 @@ const Video = forwardRef<any, Props>(
           playlist={null}
           seqMarker={seq}
           seqVideos={seqVideos}
+          pts={pts}
         />
       </>
     );

@@ -163,6 +163,7 @@ export const loadMeta = async (
   const cache = editVideoMetaCache("get", path);
   if (!cache) {
     const res = await window.electron.getVideoMeta(path);
+    const pts = await window.electron.getVideoPTS(path);
     const size: Size = { w: res.streams[0].width, h: res.streams[0].height };
     const str = res.streams[0].r_frame_rate;
     const parts = str.split("/");
@@ -170,7 +171,12 @@ export const loadMeta = async (
       parts.length === 2 ? Number(parts[0]) / Number(parts[1]) : NaN;
     const duration_str = res.format.duration;
     const duration: number = Number(duration_str);
-    editVideoMetaCache("add", path, [size, fps, duration]);
+    editVideoMetaCache("add", path, [
+      size,
+      fps,
+      duration,
+      isErr(pts) ? 0 : Number(pts),
+    ]);
   }
 };
 

@@ -90,6 +90,11 @@ const electronHandler = {
     return response;
   },
 
+  getVideoPTS: async (videoPath: string): Promise<string | Err> => {
+    const response = await ipcRenderer.invoke("get-video-pts", videoPath);
+    return response;
+  },
+
   getVideoList: async (inputPath: string): Promise<Video[] | Err> => {
     const response = await ipcRenderer.invoke("get-video-list", inputPath);
     return response;
@@ -221,6 +226,16 @@ const electronHandler = {
       metaList
     );
     return response;
+  },
+
+  ArgOpen: async () => {
+    const response = await ipcRenderer.invoke("arg-open");
+    return;
+  },
+
+  confirmClose: async (msg: string): Promise<boolean> => {
+    const result = await ipcRenderer.invoke("show-confirm-dialog", msg);
+    return result;
   },
 };
 

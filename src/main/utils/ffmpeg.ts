@@ -53,6 +53,60 @@ const getVideoMeta = (videoPath: string): Promise<any | Err> => {
   });
 };
 
+const getFirstFramePTS = (videoPath: string): Promise<string | Err> => {
+  return new Promise((resolve, reject) => {
+    const args = [
+      "-v",
+      "error",
+      "-select_streams",
+      "v:0",
+      "-read_intervals",
+      "%+0.1",
+      "-show_frames",
+      "-show_entries",
+      "frame=pts_time",
+      "-of",
+      "json",
+      videoPath,
+    ];
+
+    const command = spawn(ffprobePath, args);
+    let output = "";
+
+    command.stdout.on("data", (data) => {
+      output += data.toString();
+    });
+
+    command.stderr.on("data", (data) => {
+      console.error("stderr:", data.toString());
+    });
+
+    command.on("close", (code) => {
+      if (code === 0) {
+        try {
+          const json = JSON.parse(output);
+          const frames = json.frames;
+          const firstValidFrame = frames.find(
+            (f: any) => f.pts_time !== undefined
+          );
+          if (firstValidFrame) {
+            resolve(firstValidFrame.pts_time);
+          } else {
+            reject({ error: "No frame found", errorcode: "" });
+          }
+        } catch (err) {
+          reject({ error: "JSON parse error", errorcode: "" });
+        }
+      } else {
+        reject({
+          error: `ffprobe exited with code ${code}`,
+          errorcode: "",
+        });
+      }
+    });
+  });
+};
+
 const getVideoDuration = (videoPath: string): Promise<number | Err> => {
   return new Promise((resolve, reject) => {
     // ffprobeコマンドの引数
@@ -345,4 +399,5 @@ export {
   getCaputureData,
   convertMOVtoMP4,
   createSequence,
+  getFirstFramePTS,
 };

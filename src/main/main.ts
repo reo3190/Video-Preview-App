@@ -10,6 +10,7 @@ import {
   getCaputureData,
   convertMOVtoMP4,
   createSequence,
+  getFirstFramePTS,
 } from "./utils/ffmpeg";
 import { isErr } from "../hook/api";
 import { getVideoList } from "./utils/video";
@@ -27,6 +28,12 @@ const temp = fs.mkdtempSync(`${os.tmpdir()}/${tempName}`);
 // \__/  \__/\__/  \__/ \_______/\__/  \__/
 
 autoUpdater.autoInstallOnAppQuit = false;
+
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  console.log("メインプロセスが多重起動しました。終了します。");
+  app.quit();
+}
 
 app.setAboutPanelOptions({
   applicationName: "[SBL]Video Preview App", // アプリ名
@@ -76,6 +83,20 @@ app.whenReady().then(async () => {
     shell.openExternal(edata.url);
     return { action: "deny" };
   });
+
+  // mainWindow.webContents.once("did-finish-load", () => {
+  //   if (process.argv.length >= 2) {
+  //     try {
+  //       const filepath = process.argv[1];
+  //       const stats = fs.statSync(filepath);
+  //       if (stats.isDirectory()) {
+  //         mainWindow.webContents.send("open-path", filepath, "openDirectory");
+  //       } else if (stats.isFile()) {
+  //         mainWindow.webContents.send("open-path", filepath, "openFile");
+  //       }
+  //     } catch (err) {}
+  //   }
+  // });
 
   ipcMain.on(
     "update-menu",
@@ -214,6 +235,25 @@ app.whenReady().then(async () => {
 
     if (canClose) {
       mainWindow.destroy(); // 強制的に閉じる
+    }
+  });
+
+  app.on("second-instance", (event, argv, workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+
+      if (argv.length >= 3) {
+        try {
+          const filepath = argv[2];
+          const stats = fs.statSync(filepath);
+          if (stats.isDirectory()) {
+            mainWindow.webContents.send("open-path", filepath, "openDirectory");
+          } else if (stats.isFile()) {
+            mainWindow.webContents.send("open-path", filepath, "openFile");
+          }
+        } catch (err) {}
+      }
     }
   });
 
@@ -374,6 +414,14 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+  "get-video-pts",
+  async (_, videoPath: string): Promise<string | Err> => {
+    const res = await getFirstFramePTS(videoPath);
+    return res;
+  }
+);
+
+ipcMain.handle(
   "get-caputure-data",
   async (
     _,
@@ -395,17 +443,7 @@ ipcMain.handle(
       const saveDir = await selectDialog("openDirectory");
       const reg = /#+/g;
 
-      // const count = Object.keys(data).length;
-
-      // for (const [index, [videoName, marker]] of Object.entries(
-      //   data
-      // ).entries()) {
       for (const [videoName, marker] of Object.entries(data)) {
-        // const videoName = path.basename(videoPath, path.extname(videoPath));
-        // mWindow?.setProgressBar(index / count);
-        // console.log(mWindow ? "true" : "false");
-        // mWindow?.webContents.send("task-progress", index / count);
-
         const folderPath = path.join(saveDir, videoName);
         fs.mkdirSync(folderPath, { recursive: true });
 
@@ -523,3 +561,27 @@ ipcMain.handle(
     }
   }
 );
+
+ipcMain.handle("arg-open", async (_) => {
+  if (process.argv.length >= 2 && mWindow) {
+    try {
+      const filepath = process.argv[1];
+      const stats = fs.statSync(filepath);
+      if (stats.isDirectory()) {
+        mWindow.webContents.send("open-path", filepath, "openDirectory");
+      } else if (stats.isFile()) {
+        mWindow.webContents.send("open-path", filepath, "openFile");
+      }
+    } catch (err) {}
+  }
+});
+
+ipcMain.handle("show-confirm-dialog", async (_, msg: string) => {
+  const { response } = await dialog.showMessageBox({
+    type: "question",
+    buttons: ["はい", "いいえ"],
+    defaultId: 1,
+    message: msg,
+  });
+  return response === 0;
+});

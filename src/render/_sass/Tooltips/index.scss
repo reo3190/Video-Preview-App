@@ -1,0 +1,24 @@
+.tooltips-wrapper {
+  .tooltips-content {
+    width: 100%;
+    height: 100%;
+  }
+
+  .tooltips-pop {
+    position: fixed;
+    pointer-events: none;
+    background: #000;
+    color: #fff;
+    padding: 3px 5px;
+    filter: drop-shadow(3px 3px 5px #00000091);
+    font-size: 1rem;
+    line-height: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    border-radius: 3px;
+
+    z-index: 5;
+  }
+}

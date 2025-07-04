@@ -31,12 +31,22 @@ export const Router = () => {
       wordList: [],
     };
 
-    const removeListener = window.electron.onCheckCanClose(() => {
+    const removeListener = window.electron.onCheckCanClose(async () => {
       const list = Filter4Edit(videoList, filter, videoMarkers);
       const count = list.length;
-      const shouldClose =
-        count == 0 ||
-        window.confirm("ペイントデータが残っています。終了しますか？");
+
+      let shouldClose = false;
+      if (count === 0) {
+        shouldClose = true;
+      } else {
+        shouldClose = await window.electron.confirmClose(
+          "ペイントデータが残っています。終了しますか？"
+        );
+      }
+
+      // const shouldClose =
+      //   count == 0 ||
+      //   window.confirm("ペイントデータが残っています。終了しますか？");
 
       window.electron.sendCloseResponse(shouldClose);
 

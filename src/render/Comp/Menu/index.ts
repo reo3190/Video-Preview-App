@@ -7,6 +7,10 @@ const Menu = () => {
   const { inputPath } = useDataContext();
 
   useEffect(() => {
+    window.electron.ArgOpen();
+  }, []);
+
+  useEffect(() => {
     const { files, folders } = getFromLocalStorage();
     window.electron.updateMenu(location.pathname, files, folders);
   }, [location]);

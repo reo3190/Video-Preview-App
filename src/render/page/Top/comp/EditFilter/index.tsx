@@ -52,9 +52,13 @@ const EditFilter: FC<Props> = ({ itemsPerPage }) => {
 
   const checkDialog = async (videoMarkers: Markers, seqList: Video[]) => {
     if (hasAnyHistory(videoMarkers) || seqList.length > 0) {
-      return confirm("現在の編集データを全て削除しますか？") ? "yes" : "no";
+      const confirm = await window.electron.confirmClose(
+        "現在の編集データを全て削除しますか？"
+      );
+
+      return confirm;
     }
-    return "no";
+    return false;
   };
 
   const handleDeleteAll = async () => {
@@ -63,7 +67,7 @@ const EditFilter: FC<Props> = ({ itemsPerPage }) => {
     });
     const res = await checkDialog(videoMarkers, seqList);
 
-    if (res == "no") return;
+    if (!res) return;
 
     initVideoMarker();
     setEditVideoList([]);

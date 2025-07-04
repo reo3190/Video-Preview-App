@@ -52,14 +52,6 @@ const Top = () => {
     } else {
       setMask(false);
     }
-    // const indexVideo = curVideo
-    //   ? tab == "FOLDER"
-    //     ? getVideoIndex(curVideo, filteredVideoList)
-    //     : tab == "EDIT"
-    //     ? getVideoIndex(curVideo, filteredEditVideoList)
-    //     : null
-    //   : null;
-    // setCurPage(indexVideo ? Math.floor(indexVideo / itemsPerPage) : curPage);
 
     setLoad(false);
 
