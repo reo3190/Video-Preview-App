@@ -5,8 +5,7 @@ const handleSaveImages = async (
   name: string,
   markers: Marker,
   path: string,
-  size: Size,
-  fps: number,
+  meta: Meta,
   setProgress?: React.Dispatch<React.SetStateAction<number>>
 ): Promise<MarkersRender> => {
   if (!markers) return {};
@@ -14,10 +13,10 @@ const handleSaveImages = async (
   const frames = Object.keys(markers || {}).map(Number);
 
   const saveData = frames.map((e) => {
-    const canvas = CaptureDraw(size, markers[e]);
+    const canvas = CaptureDraw(meta.size, markers[e]);
     return {
       frame: e,
-      sec: frame2time(e, fps),
+      sec: frame2time(e, meta.fps),
       paint: canvas,
     };
   });

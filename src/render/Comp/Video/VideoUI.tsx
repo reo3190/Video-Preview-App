@@ -1,6 +1,7 @@
 import React, { forwardRef } from "react";
 import "video.js/dist/video-js.css";
 import Tooltips from "../Tooltips";
+import { round } from "../../../hook/api";
 import {
   FaAnglesLeft,
   FaAnglesRight,
@@ -19,7 +20,6 @@ import {
 import { MdErrorOutline } from "react-icons/md";
 
 type Props = {
-  fps: FPS;
   frame: number;
   allFrame: Frame;
   isPlay: boolean;
@@ -27,13 +27,12 @@ type Props = {
   isSetTrimEnd: Boolean;
   seekDownMarker: () => void;
   seekUpMarker: () => void;
-  pts: number;
+  meta: Meta;
 };
 
 const VideoUI = forwardRef<any, Props>(
   (
     {
-      fps,
       frame,
       allFrame,
       isPlay,
@@ -41,7 +40,7 @@ const VideoUI = forwardRef<any, Props>(
       isSetTrimEnd,
       seekDownMarker,
       seekUpMarker,
-      pts,
+      meta,
     },
     videoRef
   ) => {
@@ -58,6 +57,13 @@ const VideoUI = forwardRef<any, Props>(
     return (
       <>
         <div className="video-ui-wrapper">
+          <div className="meta-ui">
+            <div>
+              size = {meta.size.w} x {meta.size.h}
+            </div>
+            <div>codec = {meta.codec}</div>
+            <div>pix_fmt = {meta.pix_fmt}</div>
+          </div>
           <div className="marker-button-wrapper">
             <button className="seekButton" onClick={() => seekDownMarker()}>
               <TbChevronLeftPipe size={"2rem"} />
@@ -109,7 +115,7 @@ const VideoUI = forwardRef<any, Props>(
           </div>
           <div className="fps-wrapper">
             <div className="seek-frame">
-              {pts != 0 && (
+              {meta.pts != 0 && (
                 <Tooltips
                   content={
                     <>
@@ -133,7 +139,7 @@ const VideoUI = forwardRef<any, Props>(
                 {frame} / {allFrame}F
               </div>
             </div>
-            <div className="fps">{`[${fps}]`}</div>
+            <div className="fps">{`[${round(meta.fps)}]`}</div>
           </div>
         </div>
       </>

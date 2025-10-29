@@ -64,9 +64,6 @@ const Player = () => {
 
   const [markers, setMarkers] = useState<Marker>(videoMarkers[curVideo.path]);
   const [curFrame, setCurFrame] = useState<number>(1);
-  const sizeRef = useRef<Size>(metaData[0]);
-  const fpsRef = useRef<number>(metaData[1]);
-  const PTSRef = useRef<number>(metaData[3]);
   const seqMarker = useRef<Marker | null>(curVideo.seq || null);
   const seqVideos = useRef<string[] | null>(curVideo.seqVideo || null);
 
@@ -95,13 +92,14 @@ const Player = () => {
       if (outerRef.current) {
         const outerAsp =
           outerRef.current.clientWidth / outerRef.current.clientHeight;
-        const videoAsp = sizeRef.current.w / sizeRef.current.h;
+        const videoAsp = metaData.size.w / metaData.size.h;
 
         if (videoAsp >= outerAsp) {
           videoRef.current.setWidth(outerRef.current?.clientWidth);
           canvasRef.current.setSize({
             w: outerRef.current.clientWidth,
-            h: (outerRef.current?.clientWidth || 100) / videoAsp,
+            h: outerRef.current.clientHeight,
+            // h: (outerRef.current?.clientWidth || 100) / videoAsp,
           });
         } else {
           const wid = outerRef.current?.clientHeight * videoAsp;
@@ -136,8 +134,7 @@ const Player = () => {
         curVideo.name,
         markers,
         curVideo.path,
-        sizeRef.current,
-        fpsRef.current,
+        metaData,
         setProgress
       );
       window.electron.saveCompositeImages(
@@ -256,6 +253,10 @@ const Player = () => {
     }
   };
 
+  const clickCanvas = () => {
+    videoRef.current?.clickVideo();
+  };
+
   function getNextElement(target: Video, offset: number) {
     const arr =
       tab == "FOLDER"
@@ -303,7 +304,7 @@ const Player = () => {
       index: paintCopyboard[1],
     });
 
-    handleAddMarker(paintCopyboard[0], paintCopyboard[1], sizeRef.current);
+    handleAddMarker(paintCopyboard[0], paintCopyboard[1], metaData.size);
     // handleSetMarkers();
   };
 
@@ -397,10 +398,11 @@ const Player = () => {
             <div className="canvas-video-inner">
               <div className="canvas-wrapper">
                 <Canvas
-                  baseSize={sizeRef.current}
+                  baseSize={metaData.size}
                   setCanUndo={setCanUndo}
                   setCanRedo={setCanRedo}
                   onDraw={handleAddMarker}
+                  clickCanvas={clickCanvas}
                   ref={canvasRef}
                 />
               </div>
@@ -410,10 +412,9 @@ const Player = () => {
                   size={windowSize.width}
                   onSeek={handleSeekFrame}
                   markers={markers}
-                  fps={fpsRef.current}
                   seq={seqMarker.current}
                   seqVideos={seqVideos.current}
-                  pts={PTSRef.current}
+                  meta={metaData}
                   ref={videoRef}
                 />
               </div>

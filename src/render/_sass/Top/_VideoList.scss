@@ -24,7 +24,8 @@
 
     .video-head-wrapper {
       width: 100%;
-      height: 45px;
+      // height: 45px;
+      height: fit-content;
 
       color: var(--video-UI-tx);
       background: var(--video-UI-no-bg-color);

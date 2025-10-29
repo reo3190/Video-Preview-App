@@ -14,13 +14,12 @@ type Props = {
   size?: number;
   onSeek: (frame: number) => void;
   markers: Marker;
-  fps: number;
   onTimeUpdate?: (time: number) => void;
   onPlay?: () => void;
   onPause?: () => void;
   seq: Marker | null;
   seqVideos: string[] | null;
-  pts: number;
+  meta: Meta;
 };
 
 const Video = forwardRef<any, Props>(
@@ -32,10 +31,9 @@ const Video = forwardRef<any, Props>(
       onPlay,
       onPause,
       markers,
-      fps,
       seq,
       seqVideos,
-      pts,
+      meta,
     },
     ref
   ) => {
@@ -219,13 +217,15 @@ const Video = forwardRef<any, Props>(
           setCurrentTime={setCurrentTime}
           onSeek={onSeek}
           markers={markers}
-          fps={fps}
+          // fps={fps}
+          // srcSize={srcSize}
           seekDownMarker={seekDownMarker}
           seekUpMarker={seekUpMarker}
           playlist={null}
           seqMarker={seq}
           seqVideos={seqVideos}
-          pts={pts}
+          // pts={pts}
+          meta={meta}
         />
       </>
     );

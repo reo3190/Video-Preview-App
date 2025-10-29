@@ -535,7 +535,7 @@ ipcMain.handle(
     metaList.forEach((e, i) => {
       if (e) {
         marker[timeline] = [[[]], 0, { w: 0, h: 0 }];
-        const total = e[2] * e[1];
+        const total = e.duration * e.fps;
         timeline += total;
       }
     });

@@ -21,7 +21,7 @@ const Loading: FC<Props> = ({}) => {
             strokeWidth="5"
             animationDuration="0.75"
             ariaLabel="rotating-lines-loading"
-            strokeColor="#ccc"
+            strokeColor="#cccccc"
           />
         </div>
       )}

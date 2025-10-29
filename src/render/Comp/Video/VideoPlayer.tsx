@@ -21,13 +21,12 @@ interface VideoPlayerProps {
   options?: any;
   onSeek: (frame: number) => void;
   markers: Marker;
-  fps: number;
   seekDownMarker: () => void;
   seekUpMarker: () => void;
   playlist: videojsSource[] | null;
   seqMarker: Marker | null;
   seqVideos: string[] | null;
-  pts: number;
+  meta: Meta;
 }
 
 // 公開するメソッドの型
@@ -47,12 +46,11 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       onPause,
       options,
       onSeek,
-      fps,
       seekDownMarker,
       seekUpMarker,
       seqMarker,
       seqVideos,
-      pts,
+      meta,
     },
     ref
   ) => {
@@ -147,8 +145,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
       const videoFrame = new VideoFrame({
         id: "video_html5_api",
-        frameRate: fps,
-        pts: pts,
+        frameRate: meta.fps,
+        pts: meta.pts,
         callback: (frame: number, time: number) => {
           frameRef.current = frame;
           setCurrFrame(round(frame));
@@ -182,7 +180,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
         const el = document.createElement("div");
         el.className = "vjs-marker-frame";
-        const _total_float = Math.round((total || 1) * fps);
+        const _total_float = Math.round((total || 1) * meta.fps);
         const wid = (1 / _total_float) * 100;
         el.style.width = wid + "%";
         el.style.minWidth = "5px";
@@ -237,7 +235,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         if (next < allFrame) {
           setCurrentFrame(next);
         } else if (next == allFrame) {
-          playerRef.current?.currentTime(frame2time(allFrame, fps));
+          playerRef.current?.currentTime(frame2time(allFrame, meta.fps));
         }
       }
     };
@@ -286,8 +284,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
     const setCurrentFrame = (frame: number): void => {
       // const halfFrameTime = frame2time(1, fps) / 2;
-      const time = frame2time(frame, fps);
-      const offset = frame2time(0.1, fps) - pts;
+      const time = frame2time(frame, meta.fps);
+      const offset = frame2time(0.1, meta.fps) - meta.pts;
       playerRef.current?.currentTime(time - offset);
     };
 
@@ -336,7 +334,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     ) => {
       if (!playerRef.current) return null;
       const totalTime = playerRef.current.duration() || 1;
-      const total_float = totalTime * fps;
+      const total_float = totalTime * meta.fps;
       const left = (frame / total_float) * 100;
       const el = document.createElement("div");
       el.className =
@@ -362,7 +360,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       removeTrimElement(type);
 
       const totalTime = playerRef.current.duration() || 1;
-      const total_float = totalTime * fps;
+      const total_float = totalTime * meta.fps;
       const left = (frame / total_float) * 100;
       const right = ((total_float - frame) / total_float) * 100;
       const el = document.createElement("div");
@@ -407,7 +405,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     ) => {
       if (!playerRef.current) return null;
       const totalTime = playerRef.current.duration() || 1;
-      const total_float = totalTime * fps;
+      const total_float = totalTime * meta.fps;
       const left = (start / total_float) * 100;
       const el = document.createElement("div");
       el.className = `vjs-seq-marker ${className}`;
@@ -447,7 +445,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       const p = getSliderBarElement() as HTMLElement | null;
       if (!p) return;
       const totalTime = playerRef.current.duration() || 1;
-      const total_float = totalTime * fps;
+      const total_float = totalTime * meta.fps;
       const left = (f / total_float) * 100;
       const wid = (1 / total_float) * 100;
       p.style.left = left - wid + "%";
@@ -472,7 +470,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       seekDown: () => seekDown(),
       seekToTop: () => playerRef.current?.currentTime(0),
       seekToLast: () => {
-        playerRef.current?.currentTime(frame2time(allFrame, fps));
+        playerRef.current?.currentTime(frame2time(allFrame, meta.fps));
       },
       setTrimStart: () => {
         setTrimStart(true);
@@ -480,8 +478,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         trimStartRef.current = currTime;
         const p = getProgressBarElement();
         if (p) {
-          const time = currTime ? currTime - pts : 0;
-          makeTrimElement(p, time2frame(time, fps) + 1, "trimS");
+          const time = currTime ? currTime - meta.pts : 0;
+          makeTrimElement(p, time2frame(time, meta.fps) + 1, "trimS");
         }
       },
       setTrimEnd: () => {
@@ -490,8 +488,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         trimEndRef.current = currTime ? currTime : null;
         const p = getProgressBarElement();
         if (p) {
-          const time = currTime ? currTime - pts : 0;
-          makeTrimElement(p, time2frame(time, fps) + 1, "trimE");
+          const time = currTime ? currTime - meta.pts : 0;
+          makeTrimElement(p, time2frame(time, meta.fps) + 1, "trimE");
         }
       },
       cleanTrim: () => {
@@ -519,7 +517,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       },
       getCurrentTime: () => playerRef.current?.currentTime() ?? 0,
       setCurrentTime: (time: number) =>
-        playerRef.current?.currentTime(time - pts),
+        playerRef.current?.currentTime(time - meta.pts),
       getCurrentFrame: () => getCurrentFrame(),
       setCurrentFrame: (f: number) => setCurrentFrame(f),
       setWidth: (w: number) => setWidth(w),
@@ -535,7 +533,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           <div ref={videoRef} />
         </div>
         <VideoUI
-          fps={round(fps)}
           frame={currFrame}
           allFrame={allFrame}
           isPlay={isPlaying}
@@ -543,7 +540,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           isSetTrimEnd={trimEnd}
           seekDownMarker={seekDownMarker}
           seekUpMarker={seekUpMarker}
-          pts={pts}
+          meta={meta}
           ref={ref}
         />
       </>

@@ -125,10 +125,10 @@ const defaultContext: DataContext = {
   editVideoMetaCache: () => null,
   paintTool: {
     pen: { size: 10, color: "#000000", opacity: 1 },
-    eraser: { size: 10, color: "", opacity: 1 },
+    eraser: { size: 10, color: "#000000", opacity: 1 },
     text: { size: 5, color: "#000000", opacity: 1 },
-    clear: { size: 0, color: "", opacity: 0 },
-    mouse: { size: 0, color: "", opacity: 0 },
+    clear: { size: 0, color: "#000000", opacity: 0 },
+    mouse: { size: 0, color: "#000000", opacity: 0 },
   },
   setPaintTool: () => {},
   activePaintTool: "mouse",

@@ -29,6 +29,7 @@ interface Props {
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
   onDraw: (history: PaintElement[][], index: number, scale?: Size) => void;
+  clickCanvas: () => void;
 }
 
 interface Size {
@@ -48,6 +49,7 @@ const Paint = forwardRef<any, Props>(
       setCanUndo,
       setCanRedo,
       onDraw,
+      clickCanvas,
     },
     ref
   ) => {
@@ -193,7 +195,7 @@ const Paint = forwardRef<any, Props>(
       offsetY: number,
       button: number | null = null
     ) => {
-      if (tool === "mouse") return;
+      if (tool === "mouse") return clickCanvas();
       if (action === "writing" || !focus || (button && button === 2)) return;
 
       const { x, y } = getMouseCoordinates(offsetX, offsetY);
@@ -461,22 +463,6 @@ const Paint = forwardRef<any, Props>(
       return canvasRef.current;
     };
 
-    // const captureFrameFromVideo = (video) => {
-    //   const ctx = getContext();
-    //   const padding = ((1 / 1.1) * canvasRef.current.width) / 20;
-    //   setPadding(padding);
-    //   if (ctx) {
-    //     ctx.drawImage(
-    //       video,
-    //       padding,
-    //       padding,
-    //       canvasRef.current.width - padding * 2,
-    //       canvasRef.current.height - padding * 2
-    //     );
-    //     setFrame(video);
-    //   }
-    // };
-
     const setSize = (size: Size): void => {
       const ctx = getContext();
       if (canvasRef.current && ctx) {
@@ -652,22 +638,11 @@ const Paint = forwardRef<any, Props>(
               position: "fixed",
               top: (selectedElement?.y1 || 1) * scale.h,
               left: (selectedElement?.x1 || 1) * scale.w,
-              // top: "0",
-              // left: "0",
               font: `${(selectedElement?.size || 1) * scale.w * 10}px "${
                 selectedElement?.font
               }", sans-serif`,
               lineHeight: "120%",
-              // width: `${Math.max(
-              //   ((selectedElement?.x2 || 0) - (selectedElement?.x1 || 0)) *
-              //     scale.w,
-              //   (selectedElement?.size || 0) * scale.w
-              // )}px`,
               width: `50%`,
-              // height: `${Math.max(
-              //   ((selectedElement?.y2 || 0) - (selectedElement?.y1 || 0)) * 1.2,
-              //   (selectedElement?.size || 0) * 3 + 20
-              // )}px`,
               height: `${(selectedElement?.size || 0) * 10 * 1.2}px`,
               margin: 0,
               padding: 0,

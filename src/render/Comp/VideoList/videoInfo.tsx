@@ -33,9 +33,13 @@ const VideoInfo: FC<Props> = ({ video }) => {
         <div className="video-head">
           <div className="video-name">{video.name}</div>
         </div>
-        <div className="video-info">
-          <div>{getInfo()}</div>
-        </div>
+        {getInfo() != "" && (
+          <>
+            <div className="video-info">
+              <div>{getInfo()}</div>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

@@ -20,13 +20,7 @@ const handleSaveAllImages = async (
     if (!(videoPath in nameList)) continue;
 
     const name = nameList[videoPath];
-    const res = await handleSaveImages(
-      name,
-      marker,
-      videoPath,
-      meta[0],
-      meta[1]
-    );
+    const res = await handleSaveImages(name, marker, videoPath, meta);
 
     markersRender = { ...markersRender, ...res };
   }

@@ -18,7 +18,8 @@ const getVideoMeta = (videoPath: string): Promise<any | Err> => {
       "-select_streams",
       "v:0",
       "-show_entries",
-      "stream=width,height,r_frame_rate",
+      "stream=codec_name,width,height,r_frame_rate,pix_fmt",
+      // "stream=width,height,r_frame_rate",
       "-show_entries",
       "format=duration",
       "-of",
@@ -327,7 +328,6 @@ const convertMOVtoMP4 = async (
     });
 
     command.on("close", (code) => {
-      console.error("22222222");
       if (code === 0) {
         const succ: Succ = { success: "" };
         resolve(succ);

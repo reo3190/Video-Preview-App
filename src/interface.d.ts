@@ -167,7 +167,16 @@ declare global {
   };
 
   // WHサイズ fps デュレーション 1フレーム目開始時間
-  type Meta = [Size, FPS, number, number];
+  // type Meta = [Size, FPS, number, number];
+
+  type Meta = {
+    size: Size;
+    fps: FPS;
+    duration: number;
+    pts: number;
+    codec: string;
+    pix_fmt: string;
+  };
 
   type editVideoMetaCache = (
     mode: CacheMode,

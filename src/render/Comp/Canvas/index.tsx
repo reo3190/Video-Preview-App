@@ -7,9 +7,10 @@ interface Props {
   setCanUndo: React.Dispatch<React.SetStateAction<boolean>>;
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
   onDraw: (history: PaintElement[][], index: number) => void;
+  clickCanvas: () => void;
 }
 const Canvas = forwardRef<any, Props>(
-  ({ baseSize, setCanUndo, setCanRedo, onDraw }, ref) => {
+  ({ baseSize, setCanUndo, setCanRedo, onDraw, clickCanvas }, ref) => {
     const { curVideo, paintTool, activePaintTool, windowSize, videoMarkers } =
       useDataContext();
 
@@ -32,6 +33,7 @@ const Canvas = forwardRef<any, Props>(
             setCanUndo={setCanUndo}
             setCanRedo={setCanRedo}
             onDraw={onDraw}
+            clickCanvas={clickCanvas}
             ref={ref}
           />
         </div>
