@@ -11,6 +11,7 @@ import Player from "video.js/dist/types/player";
 import { frame2time, time2frame, round } from "../../../hook/api";
 import { useDataContext } from "../../../hook/UpdateContext";
 import VideoUI from "./VideoUI";
+import { zoomStyleType } from "../../page/Player";
 
 interface VideoPlayerProps {
   currentTime: number;
@@ -27,6 +28,7 @@ interface VideoPlayerProps {
   seqMarker: Marker | null;
   seqVideos: string[] | null;
   meta: Meta;
+  zoomStyle: zoomStyleType;
 }
 
 // 公開するメソッドの型
@@ -51,6 +53,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       seqMarker,
       seqVideos,
       meta,
+      zoomStyle,
     },
     ref
   ) => {
@@ -78,11 +81,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const trimStartRef = useRef<number | null>(null);
     const trimEndRef = useRef<number | null>(null);
 
-    const v = videoMarkers[curVideo.path];
-
+    const vms = videoMarkers[curVideo.path];
     const [markerFrames, setMarkerFrames] = useState<number[]>(
-      Object.keys(v || {}).map(Number)
+      Object.keys(vms || {}).map(Number)
     );
+
+    const videoDomRef = useRef<HTMLVideoElement | null>(null);
 
     // Video.js 初期化
     useEffect(() => {
@@ -94,7 +98,19 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
         __init__(videoElement);
       }
-    }, [videoRef]);
+
+      if (playerRef.current && !videoDomRef.current) {
+        videoDomRef.current = playerRef.current.el_.querySelector("video");
+      }
+    }, [videoRef, playerRef]);
+
+    useEffect(() => {
+      if (playerRef.current && videoDomRef.current) {
+        const videoDom = playerRef.current.el_.querySelector("video");
+        if (!videoDom) return;
+        Object.assign(videoDom.style, zoomStyle);
+      }
+    }, [videoDomRef, zoomStyle]);
 
     useEffect(() => {
       if (playerRef.current) {
@@ -521,6 +537,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       getCurrentFrame: () => getCurrentFrame(),
       setCurrentFrame: (f: number) => setCurrentFrame(f),
       setWidth: (w: number) => setWidth(w),
+      getWidth: () => playerRef.current?.width() ?? 100,
       getSize: () => getSize(),
       addMarker: (time: number) => addMarker(time),
       removeMarker: (f: number) => removeMarker(f),

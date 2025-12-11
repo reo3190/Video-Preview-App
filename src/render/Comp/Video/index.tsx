@@ -8,6 +8,7 @@ import React, {
 import "video.js/dist/video-js.css";
 import VideoPlayer from "./VideoPlayer";
 import { useShortcutContext } from "../../../ctx/ShortCut";
+import { zoomStyleType } from "../../page/Player";
 
 type Props = {
   path: string;
@@ -20,6 +21,7 @@ type Props = {
   seq: Marker | null;
   seqVideos: string[] | null;
   meta: Meta;
+  zoomStyle: zoomStyleType;
 };
 
 const Video = forwardRef<any, Props>(
@@ -34,6 +36,7 @@ const Video = forwardRef<any, Props>(
       seq,
       seqVideos,
       meta,
+      zoomStyle,
     },
     ref
   ) => {
@@ -217,15 +220,13 @@ const Video = forwardRef<any, Props>(
           setCurrentTime={setCurrentTime}
           onSeek={onSeek}
           markers={markers}
-          // fps={fps}
-          // srcSize={srcSize}
           seekDownMarker={seekDownMarker}
           seekUpMarker={seekUpMarker}
           playlist={null}
           seqMarker={seq}
           seqVideos={seqVideos}
-          // pts={pts}
           meta={meta}
+          zoomStyle={zoomStyle}
         />
       </>
     );

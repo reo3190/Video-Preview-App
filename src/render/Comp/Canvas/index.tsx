@@ -1,6 +1,7 @@
 import React, { forwardRef } from "react";
 import { useDataContext } from "../../../hook/UpdateContext";
 import Paint from "./paint";
+import { zoomStyleType } from "../../page/Player";
 
 interface Props {
   baseSize: Size;
@@ -8,9 +9,26 @@ interface Props {
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
   onDraw: (history: PaintElement[][], index: number) => void;
   clickCanvas: () => void;
+  zoomStyle: zoomStyleType;
+  zOffset: Size;
+  zScale: number;
+  outerRef: React.RefObject<HTMLDivElement | null>;
 }
 const Canvas = forwardRef<any, Props>(
-  ({ baseSize, setCanUndo, setCanRedo, onDraw, clickCanvas }, ref) => {
+  (
+    {
+      baseSize,
+      setCanUndo,
+      setCanRedo,
+      onDraw,
+      clickCanvas,
+      zoomStyle,
+      zOffset,
+      zScale,
+      outerRef,
+    },
+    ref
+  ) => {
     const { curVideo, paintTool, activePaintTool, windowSize, videoMarkers } =
       useDataContext();
 
@@ -34,6 +52,10 @@ const Canvas = forwardRef<any, Props>(
             setCanRedo={setCanRedo}
             onDraw={onDraw}
             clickCanvas={clickCanvas}
+            zoomStyle={zoomStyle}
+            zOffset={zOffset}
+            zScale={zScale}
+            outerRef={outerRef}
             ref={ref}
           />
         </div>

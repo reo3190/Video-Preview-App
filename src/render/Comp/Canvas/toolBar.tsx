@@ -6,6 +6,8 @@ import {
   IoEllipseOutline,
   IoEllipse,
 } from "react-icons/io5";
+import { TbZoomCheck, TbZoomCancel } from "react-icons/tb";
+
 import { LuMousePointer2 } from "react-icons/lu";
 import { MdOpacity, MdDelete } from "react-icons/md";
 import { VscTextSize } from "react-icons/vsc";
@@ -17,6 +19,7 @@ interface Props {
   canRedo: boolean;
   canDelete: boolean;
   removeMarker: () => void;
+  resetZoom: () => void;
 }
 
 const ToolBar: FC<Props> = ({
@@ -25,6 +28,7 @@ const ToolBar: FC<Props> = ({
   canRedo,
   canDelete,
   removeMarker,
+  resetZoom,
 }) => {
   const {
     paintTool,
@@ -33,6 +37,7 @@ const ToolBar: FC<Props> = ({
     setActivePaintTool,
     paintConfig,
     setPaintConfig,
+    useZoom,
   } = useDataContext();
   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
   const [popup, setPopup] = useState(false);
@@ -148,14 +153,14 @@ const ToolBar: FC<Props> = ({
     const handleClick = (e: MouseEvent): void => {
       e.preventDefault();
       if (activePaintTool === "mouse") return;
-      setPopup(true);
+      setPopup((e) => !e);
       setPopupPos({ x: e.clientX, y: e.clientY });
     };
 
     const handleClose = (e: MouseEvent): void => {
       const el = contextRef.current;
       const target = e.target as Node | null;
-      if (!el || !target) return;
+      if (!el || !target || e.button == 2) return;
       if (!el.contains(target)) {
         setPopup(false);
       }
@@ -284,6 +289,20 @@ const ToolBar: FC<Props> = ({
         >
           <PiTextT size={"2.5rem"} />
         </label>
+
+        <button
+          onClick={() => {
+            resetZoom();
+          }}
+          className={`tool-zoom ${useZoom ? "active" : null}`}
+        >
+          {useZoom ? (
+            <TbZoomCancel size={"2rem"} />
+          ) : (
+            <TbZoomCheck size={"2rem"} />
+          )}
+        </button>
+
         <hr />
         <div className={`input-detail-wrapper ${activePaintTool}`}>
           <div className="input-detail">

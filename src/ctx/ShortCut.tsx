@@ -50,6 +50,9 @@ const defaultShortcuts: ShortCuts = {
   Fullscreen: {
     key: "@",
   },
+  ZoomPaint: {
+    key: "z",
+  },
 };
 
 interface DataContext {

@@ -110,6 +110,9 @@ body {
     .progress-wrapper {
       width: 100%;
       height: 3px;
+      z-index: 15;
+      position: relative;
+      background: black;
 
       .bar-outer {
         width: 100%;

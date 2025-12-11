@@ -5,6 +5,8 @@
   align-items: center;
   background: #333;
   height: 40px;
+  z-index: 15;
+  position: relative;
 
   .back-button {
     grid-column: 1/2;

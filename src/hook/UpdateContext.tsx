@@ -55,6 +55,8 @@ interface DataContext {
   setActivePaintTool: (e: PaintToolName) => void;
   paintConfig: PaintConfig;
   setPaintConfig: (update: Partial<PaintConfig>) => void;
+  useZoom: boolean;
+  setUseZoom: (update: boolean) => void;
   paintCopyboard: [PaintElement[][], number];
   setPaintCopyboard: (e: [PaintElement[][], number]) => void;
   videoMarkers: Markers;
@@ -135,6 +137,8 @@ const defaultContext: DataContext = {
   setActivePaintTool: () => {},
   paintConfig: { smooth: 0, pressure: 0 },
   setPaintConfig: () => {},
+  useZoom: false,
+  setUseZoom: () => {},
   paintCopyboard: [[[]], 0],
   setPaintCopyboard: () => {},
   videoMarkers: {},
@@ -206,9 +210,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [activePaintTool, setActivePaintTool] = useState<PaintToolName>(
     defaultContext.activePaintTool
   );
+
   const [paintConfig, setPaintConfig] = useState<PaintConfig>(
     defaultContext.paintConfig
   );
+  const [useZoom, setUseZoom] = useState<boolean>(defaultContext.useZoom);
   const [paintCopyboard, setPaintCopyboard] = useState<
     [PaintElement[][], number]
   >(defaultContext.paintCopyboard);
@@ -362,6 +368,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     []
   );
 
+  const updateUseZoom = useCallback((update: boolean): void => {
+    setUseZoom(update);
+  }, []);
+
   const updatePaintCopyboard = useCallback(
     (e: [PaintElement[][], number]): void => {
       setPaintCopyboard(e);
@@ -501,6 +511,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         setActivePaintTool: updateActivePaintTool,
         paintConfig,
         setPaintConfig: updatePaintConfig,
+        useZoom,
+        setUseZoom: updateUseZoom,
         paintCopyboard,
         setPaintCopyboard: updatePaintCopyboard,
         videoMarkers,

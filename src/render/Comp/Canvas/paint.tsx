@@ -18,6 +18,7 @@ import {
   positionWithinElement,
   cursorForPosition,
 } from "./utils/positionUtils";
+import { zoomStyleType } from "../../page/Player";
 
 interface Props {
   baseSize: Size;
@@ -30,6 +31,10 @@ interface Props {
   setCanRedo: React.Dispatch<React.SetStateAction<boolean>>;
   onDraw: (history: PaintElement[][], index: number, scale?: Size) => void;
   clickCanvas: () => void;
+  zoomStyle: zoomStyleType;
+  zOffset: Size;
+  zScale: number;
+  outerRef: React.RefObject<HTMLDivElement | null>;
 }
 
 interface Size {
@@ -50,6 +55,10 @@ const Paint = forwardRef<any, Props>(
       setCanRedo,
       onDraw,
       clickCanvas,
+      zoomStyle,
+      zOffset,
+      zScale,
+      outerRef,
     },
     ref
   ) => {
@@ -171,13 +180,18 @@ const Paint = forwardRef<any, Props>(
       }
     }, [update]);
 
-    const start_mouse = (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (e.pointerType !== "mouse") return;
+    const getMousePos = (e: React.PointerEvent<HTMLCanvasElement>) => {
       const offsetX = e.nativeEvent.offsetX;
       const offsetY = e.nativeEvent.offsetY;
+      return { x: offsetX, y: offsetY };
+    };
+
+    const start_mouse = (e: React.PointerEvent<HTMLCanvasElement>) => {
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      const pos = getMousePos(e);
       const button = e.button;
 
-      startDrawing(offsetX, offsetY, button);
+      startDrawing(pos.x, pos.y, button);
     };
 
     const start_pen = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -228,11 +242,10 @@ const Paint = forwardRef<any, Props>(
     };
 
     const draw_mouse = (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const x = e.nativeEvent.offsetX;
-      const y = e.nativeEvent.offsetY;
+      const pos = getMousePos(e as React.PointerEvent<HTMLCanvasElement>);
       const target = e.target;
 
-      draw(x, y, target);
+      draw(pos.x, pos.y, target);
     };
 
     const draw_pen = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -330,13 +343,11 @@ const Paint = forwardRef<any, Props>(
     };
 
     const end_mouse = (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (e.pointerType !== "mouse") {
-        return;
-      }
-      const x = e.nativeEvent.offsetX;
-      const y = e.nativeEvent.offsetY;
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
 
-      endDrawing(x, y);
+      const pos = getMousePos(e);
+
+      endDrawing(pos.x, pos.y);
     };
 
     const end_pen = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -628,6 +639,12 @@ const Paint = forwardRef<any, Props>(
       }
     }, [onChange]);
 
+    useEffect(() => {
+      if (canvasRef.current) {
+        Object.assign(canvasRef.current.style, zoomStyle);
+      }
+    }, [canvasRef, zoomStyle]);
+
     return (
       <div className="canvas-container">
         {action === "writing" ? (
@@ -683,8 +700,11 @@ const Paint = forwardRef<any, Props>(
                 ? toolState.size * scale.w
                 : toolState.size * scale.h
             }
-            brightness={corsorColor}
             move={true}
+            zoomStyle={zoomStyle}
+            zOffset={zOffset}
+            zScale={zScale}
+            outerRef={outerRef}
           />
         )}
       </div>

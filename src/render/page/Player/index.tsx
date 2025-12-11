@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDataContext } from "../../../hook/UpdateContext";
 import { useShortcutContext } from "../../../ctx/ShortCut";
@@ -12,6 +12,12 @@ import { openFileFolder, handleDrop } from "../../../hook/useLoadFileFolder";
 import { IoArrowBack } from "react-icons/io5";
 import { LuSquareChevronRight, LuSquareChevronLeft } from "react-icons/lu";
 import { loadFile } from "../../../hook/api";
+
+export interface zoomStyleType {
+  transform: string;
+  transformOrigin: string;
+  transition: string;
+}
 
 const Player = () => {
   const {
@@ -34,6 +40,8 @@ const Player = () => {
     filteredEditVideoList,
     paintCopyboard,
     setPaintCopyboard,
+    useZoom,
+    setUseZoom,
   } = useDataContext();
   const { useKeybind } = useShortcutContext();
 
@@ -78,6 +86,19 @@ const Player = () => {
     y: number;
   } | null>(null);
 
+  // Zoom関連
+  const zoomRef = useRef<HTMLDivElement | null>(null);
+  const DEFAULT = { x: 0, y: 0, scale: 1 };
+  const [zScale, setZScale] = useState(DEFAULT.scale);
+  const [zOffset, setZOffset] = useState<Size>({ w: DEFAULT.x, h: DEFAULT.y });
+  const [isPanning, setIsPanning] = useState(false);
+  const [startPos, setStartPos] = useState<Size>({ w: 0, h: 0 });
+  const [zoomStyle, setZoomStyle] = useState<zoomStyleType>({
+    transform: `translate(${zOffset.w}px, ${zOffset.h}px) scale(${zScale})`,
+    transformOrigin: "top left",
+    transition: isPanning ? "none" : "transform 0.1s linear",
+  });
+
   useEffect(() => {
     setLoad(false);
   }, [curVideo]);
@@ -90,24 +111,36 @@ const Player = () => {
 
     const setSize = () => {
       if (outerRef.current) {
+        const oldWidth = videoRef.current.getWidth();
+        let newWidth = oldWidth;
+
         const outerAsp =
           outerRef.current.clientWidth / outerRef.current.clientHeight;
         const videoAsp = metaData.size.w / metaData.size.h;
 
         if (videoAsp >= outerAsp) {
-          videoRef.current.setWidth(outerRef.current?.clientWidth);
+          newWidth = outerRef.current.clientWidth;
+          videoRef.current.setWidth(newWidth);
           canvasRef.current.setSize({
             w: outerRef.current.clientWidth,
             h: outerRef.current.clientHeight,
             // h: (outerRef.current?.clientWidth || 100) / videoAsp,
           });
         } else {
-          const wid = outerRef.current?.clientHeight * videoAsp;
-          videoRef.current.setWidth(wid);
+          newWidth = outerRef.current.clientHeight * videoAsp;
+          videoRef.current.setWidth(newWidth);
           canvasRef.current.setSize({
-            w: wid,
-            h: (wid || 100) / videoAsp,
+            w: newWidth,
+            h: (newWidth || 100) / videoAsp,
           });
+        }
+
+        if (oldWidth) {
+          const factor = newWidth / oldWidth;
+          setZOffset((prev) => ({
+            w: prev.w * factor,
+            h: prev.h * factor,
+          }));
         }
       }
     };
@@ -308,6 +341,91 @@ const Player = () => {
     // handleSetMarkers();
   };
 
+  // Zoom処理
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (!useZoom) return;
+    // e.preventDefault(); // スクロールによる移動防止
+    const video = zoomRef.current;
+    if (!video) return;
+
+    const rect = video.getBoundingClientRect();
+
+    const prevScale = zScale;
+    const newScale = Math.min(
+      Math.max(prevScale + (e.deltaY < 0 ? 0.2 : -0.2), 0.5),
+      10
+    );
+
+    // --- 拡大時（deltaY < 0） → マウス位置を基準にズーム ---
+    let baseX, baseY;
+
+    baseX = e.clientX - rect.left; // マウス位置
+    baseY = e.clientY - rect.top;
+
+    const dx = baseX - zOffset.w;
+    const dy = baseY - zOffset.h;
+
+    const newOffset = {
+      w: zOffset.w - (dx / prevScale) * (newScale - prevScale),
+      h: zOffset.h - (dy / prevScale) * (newScale - prevScale),
+    };
+
+    setZOffset(newOffset);
+    setZScale(newScale);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!useZoom) return;
+
+    if (e.button === 1) {
+      // middle mouse
+      e.preventDefault();
+
+      // ▶ 中クリックのダブルクリックならリセット
+      if (e.detail === 2) {
+        setZOffset({ w: DEFAULT.x, h: DEFAULT.y });
+        setZScale(DEFAULT.scale);
+        return;
+      }
+
+      setIsPanning(true);
+      setStartPos({ w: e.clientX - zOffset.w, h: e.clientY - zOffset.h });
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!useZoom) return;
+
+    if (!isPanning || !zoomRef.current) return;
+
+    setZOffset({
+      w: e.clientX - startPos.w,
+      h: e.clientY - startPos.h,
+    });
+  };
+
+  const handleMouseUp = () => {
+    if (!useZoom) return;
+    setIsPanning(false);
+  };
+
+  const resetZoom = () => {
+    setUseZoom(!useZoom);
+    setZScale(DEFAULT.scale);
+    setZOffset({ w: DEFAULT.x, h: DEFAULT.y });
+    setIsPanning(false);
+    setStartPos({ w: 0, h: 0 });
+  };
+
+  useEffect(() => {
+    setZoomStyle({
+      transform: `translate(${zOffset.w}px, ${zOffset.h}px) scale(${zScale})`,
+      transformOrigin: "top left",
+      transition: isPanning ? "none" : "transform 0.05s linear",
+    });
+  }, [zOffset, zScale, isPanning]);
+
   useKeybind({
     keybind: "NextVideo",
     onKeyDown: () => loadNextBack(1),
@@ -326,6 +444,11 @@ const Player = () => {
   useKeybind({
     keybind: "PastePaint",
     onKeyDown: () => pastePaint(),
+  });
+
+  useKeybind({
+    keybind: "ZoomPaint",
+    onKeyDown: () => resetZoom(),
   });
 
   return (
@@ -391,18 +514,30 @@ const Player = () => {
               canRedo={canRedo}
               canDelete={canDelete}
               removeMarker={handleRemoveMarker}
+              resetZoom={resetZoom}
             />
           </div>
 
-          <div className="canvas-video" ref={outerRef}>
+          <div
+            className="canvas-video"
+            ref={outerRef}
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+          >
             <div className="canvas-video-inner">
-              <div className="canvas-wrapper">
+              <div className="canvas-wrapper" ref={zoomRef}>
                 <Canvas
                   baseSize={metaData.size}
                   setCanUndo={setCanUndo}
                   setCanRedo={setCanRedo}
                   onDraw={handleAddMarker}
                   clickCanvas={clickCanvas}
+                  zoomStyle={zoomStyle}
+                  zOffset={zOffset}
+                  zScale={zScale}
+                  outerRef={zoomRef}
                   ref={canvasRef}
                 />
               </div>
@@ -415,6 +550,7 @@ const Player = () => {
                   seq={seqMarker.current}
                   seqVideos={seqVideos.current}
                   meta={metaData}
+                  zoomStyle={zoomStyle}
                   ref={videoRef}
                 />
               </div>
